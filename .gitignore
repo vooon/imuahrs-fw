@@ -2,3 +2,5 @@
 *.swp
 .dep/
 build/
+*.s#?
+*.l#?
