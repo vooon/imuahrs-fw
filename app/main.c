@@ -22,6 +22,8 @@
 
 #include "led.h"
 
+EVENTSOURCE_DECL(alert_event_source);
+
 enum led_status {
 	LST_INIT,
 	LST_FAIL,
@@ -66,7 +68,7 @@ void led_update(enum led_status ls)
  * HW config
  */
 
-static PWMConfig pwm1cfg = {
+static const PWMConfig pwm1cfg = {
 	1000,
 	100,
 	NULL,
@@ -77,6 +79,13 @@ static PWMConfig pwm1cfg = {
 		{PWM_OUTPUT_DISABLED, NULL}
 	},
 	0
+};
+
+static const I2CConfig i2c1cfg = {
+	OPMODE_I2C,
+	400000,
+	//STD_DUTY_CYCLE
+	FAST_DUTY_CYCLE_2
 };
 
 /*
@@ -104,6 +113,9 @@ int main(void)
 	/* Activate pwm */
 	pwmStart(&PWMD1, &pwm1cfg);
 
+	/* Activate i2c */
+	i2cStart(&I2CD1, &i2c1cfg);
+
 	/*
 	 * Creates the blinker thread.
 	 */
@@ -123,7 +135,19 @@ int main(void)
 
 		led_update(ls);
 
-		if (++i > 1000)
+		if (++i > 500) {
 			i = 0;
+
+			i2cAcquireBus(&I2CD1);
+			for (i2caddr_t a = 3; a < 0x80; a++) {
+				uint8_t buf[1] = {0};
+				msg_t r = i2cMasterTransmitTimeout(&I2CD1, a, buf, 1, NULL, 0, MS2ST(10));
+
+				if (r == I2CD_NO_ERROR)
+					chprintf(&SD2, "%02x: exists\n", a);
+			}
+			i2cReleaseBus(&I2CD1);
+			chprintf(&SD2, "\n\n");
+		}
 	}
 }
