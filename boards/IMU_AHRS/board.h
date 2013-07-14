@@ -41,7 +41,11 @@
 /*
  * IO pins assignments.
  */
-#define GPIOC_LED               12
+#define GPIOA_BMP_EOC           4
+#define GPIOA_HMC_DRDY          5
+#define GPIOA_MPU_INT           6
+#define GPIOA_MPU_FSYNC         7
+#define GPIOA_LED               8
 
 /*
  * I/O ports initial setup, this configuration is established soon after reset
@@ -70,25 +74,34 @@
 /*
  * Port A setup.
  * Everything input with pull-up except:
- * PA12 - Normal input      (USB DP).
+ * PA1  - output - DRDY (default LOW)
+ * PA2  - alt pp - TXD2
+ * PA3  - in pup - RXD2
+ * PA4  - in pup - BMP_EOC (nc)
+ * PA5  - in pup - HMC_DRDY
+ * PA6  - in pup - MPU_INT
+ * PA7  - in pup - MPU_FSYNC
+ * PA8  - output - RUN LED (switch to PWM after startup)
+ * PA9  - alt pp - TXD1
+ * PA10 - in pup - RXD1
  */
-#define VAL_GPIOACRL            0x88888888      /*  PA7...PA0 */
-#define VAL_GPIOACRH            0x88888888      /* PA15...PA8 */
-#define VAL_GPIOAODR            0xFFFFFFFF
+#define VAL_GPIOACRL            0x88888918      /*  PA7...PA0 */
+#define VAL_GPIOACRH            0x88888891      /* PA15...PA8 */
+#define VAL_GPIOAODR            0xFFFFFFFD
 
 /*
  * Port B setup.
  * Everything input with pull-up except:
- * PB14 - Normal input      (MMC SPI2 MISO).
+ * PB6  - alt od - I2C1 SCL
+ * PB7  - alt od - I2C1 SDA
  */
-#define VAL_GPIOBCRL            0x88888888      /*  PB7...PB0 */
+#define VAL_GPIOBCRL            0xDD888888      /*  PB7...PB0 */
 #define VAL_GPIOBCRH            0x88888888      /* PB15...PB8 */
 #define VAL_GPIOBODR            0xFFFFFFFF
 
 /*
  * Port C setup.
  * Everything input with pull-up except:
- * PC12 - Push Pull output (LED).
  */
 #define VAL_GPIOCCRL            0x88888888      /*  PC7...PC0 */
 #define VAL_GPIOCCRH            0x88888888      /* PC15...PC8 */
