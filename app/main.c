@@ -21,6 +21,8 @@
 #include "hal.h"
 
 #include "led.h"
+#include "alert.h"
+#include "task_bmp085.h"
 
 EVENTSOURCE_DECL(alert_event_source);
 
@@ -84,7 +86,6 @@ static const PWMConfig pwm1cfg = {
 static const I2CConfig i2c1cfg = {
 	OPMODE_I2C,
 	400000,
-	//STD_DUTY_CYCLE
 	FAST_DUTY_CYCLE_2
 };
 
@@ -93,8 +94,8 @@ static const I2CConfig i2c1cfg = {
  */
 int main(void)
 {
-
-	enum led_status ls;
+	enum led_status lstat = LST_INIT;
+	EventListener el1;
 
 	/*
 	 * System initializations.
@@ -116,38 +117,14 @@ int main(void)
 	/* Activate i2c */
 	i2cStart(&I2CD1, &i2c1cfg);
 
-	/*
-	 * Creates the blinker thread.
-	 */
-	//chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO, Thread1, NULL);
+	/* init devices */
+	chThdSleepMilliseconds(5000);
+	bmp085_init();
 
-	int i = 0;
-	ls = LST_INIT;
 	while (TRUE) {
 		chThdSleepMilliseconds(50);
 
-		if (i < 100)
-			ls = LST_INIT;
-		else if (i < 200)
-			ls = LST_FAIL;
-		else
-			ls = LST_NORMAL;
+		led_update(lstat);
 
-		led_update(ls);
-
-		if (++i > 500) {
-			i = 0;
-
-			i2cAcquireBus(&I2CD1);
-			for (i2caddr_t a = 3; a < 0x80; a++) {
-				uint8_t buf[1] = {0};
-				msg_t r = i2cMasterTransmitTimeout(&I2CD1, a, buf, 1, NULL, 0, MS2ST(10));
-
-				if (r == I2CD_NO_ERROR)
-					chprintf(&SD2, "%02x: exists\n", a);
-			}
-			i2cReleaseBus(&I2CD1);
-			chprintf(&SD2, "\n\n");
-		}
 	}
 }
