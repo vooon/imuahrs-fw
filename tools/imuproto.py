@@ -2,6 +2,15 @@
 # vim:set ts=4 ws=4 et
 
 import serial
+import threading
+from Queue import Queue
+
+class DesError(Exception):
+    pass
+
+class SerError(Exception):
+    pass
+
 
 PROTO_START = 0x79
 
@@ -24,9 +33,12 @@ CRC_TABLE = (
     0xde, 0xd9, 0xd0, 0xd7, 0xc2, 0xc5, 0xcc, 0xcb, 0xe6, 0xe1, 0xe8, 0xef, 0xfa, 0xfd, 0xf4, 0xf3
 )
 
+def _crc8(crc, buf):
+    crc8 = crc
+    for b in buf:
+        crc8 = CRC_TABLE[crc8 ^ b]
 
-class DesError(Exception):
-    pass
+    return crc8
 
 
 class PacketBase(object):
@@ -37,20 +49,13 @@ class PacketBase(object):
         if bytestream is not None:
             self.deserialize(time, bytestream)
 
-    def _crc8(self, crc, buf):
-        crc8 = crc
-        for b in buf:
-            crc8 = CRC_TABLE[crc8 ^ b]
-
-        return crc8
-
     def serialize(self):
         time = 0
         payload = self.serialize_payload()
 
         buf = bytearray((PROTO_START, self.msgid, time & 0xff, (time >> 8) & 0xff, len(payload)))
         buf += payload
-        buf.append(self._crc8(0, buf[1:]))
+        buf.append(_crc8(0, buf[1:]))
 
         return buf
 
@@ -72,6 +77,9 @@ class Pt_Version(PacketBase):
     def deserialize_payload(self, buf):
         self.version_str = str(buf)
 
+    def __repr__(self):
+        return "<Pt_Version: ({} ms) '{}'>".format(self.time, self.version_str)
+
 
 class Pt_SensTest(PacketBase):
     msgid = 0x01
@@ -91,9 +99,16 @@ class Pt_SensTest(PacketBase):
         self.mag_ok = bool(b & 0x04)
         self.baro_ok = bool(b & 0x08)
 
+    def __repr__(self):
+        return "<Pt_SensTest: ({} ms) gyro_ok={} accel_ok={} mag_ok={} baro_ok={}>".format(
+            self.time, self.gyro_ok, self.accel_ok, self.mag_ok, self.baro_ok)
+
 
 class Pt_Heartbeat(PacketBase):
     msgid = 0x02
+
+    def __repr__(self):
+        return "<Pt_Heartbeat: ({} ms)>".format(self.time)
 
 
 class Pt_MesgEn(PacketBase):
@@ -112,6 +127,10 @@ class Pt_MesgEn(PacketBase):
             b |= 0x04
         return bytearray((b, ))
 
+    def __repr__(self):
+        return "<Pt_MesgEn: ({} ms) mpu_dat_en={} mag_dat_en={} bar_dat_en={}>".format(
+            self.time, self.mpu_dat_en, self.mag_dat_en, self.bar_dat_en)
+
 
 class Pt_MpuCfg(PacketBase):
     msgid = 0xc1
@@ -121,6 +140,10 @@ class Pt_MpuCfg(PacketBase):
 
     def serialize_payload(self):
         return bytearray((self.gyro_scale, self.accel_scale, self.filter_scale))
+
+    def __repr__(self):
+        return "<Pt_MpuCfg: ({} ms) gyro_scale={} accel_scale={} filter_scale={}>".format(
+            self.time, self.gyro_scale, self.accel_scale, self.filter_scale)
 
 
 class Pt_HmcCfg(PacketBase):
@@ -133,9 +156,16 @@ class Pt_HmcCfg(PacketBase):
     def serialize_payload(self):
         return bytearray((self.m_odr, self.meas_conf, self.gain, self.mode))
 
+    def __repr__(self):
+        return "<Pt_HmcCfg: ({} ms) m_odr={} meas_conf={} gain={} mode={}>".format(
+            self.time, self.m_odr, self.meas_conf, self.gain, self.mode)
+
 
 class Pt_BmpCfg(PacketBase):
     msgid = 0xc3
+
+    def __repr__(self):
+        return "<Pt_BmpCfg: ({} ms)>".format(self.time)
 
 
 class Pt_MpuDat(PacketBase):
@@ -144,12 +174,21 @@ class Pt_MpuDat(PacketBase):
     def deserialize_payload(self, buf):
         pass
 
+    def __repr__(self):
+        return "<Pt_MpuDat: ({} ms) TODO>".format(self.time)
+
 
 class Pt_MagDat(PacketBase):
     msgid = 0xd1
+    mag_x = 0
+    mag_y = 0
+    mag_z = 0
 
     def deserialize_payload(self, buf):
         pass
+
+    def __repr__(self):
+        return "<Pt_MagDat: ({} ms) TODO>".format(self.time)
 
 
 class Pt_BarDat(PacketBase):
@@ -165,6 +204,10 @@ class Pt_BarDat(PacketBase):
         self.pressure = buf[0] | buf[1] << 8 | buf[2] << 16 | buf[3] << 24
         self.temperature = buf[4] | buf[5] << 8
 
+    def __repr__(self):
+        return "<Pt_BarDat: ({} ms) pressure={} temperature={}>".format(
+            self.time, self.pressure, self.temperature)
+
 
 PKT_TYPES = {
     0x00: Pt_Version,
@@ -179,4 +222,100 @@ PKT_TYPES = {
     0xd2: Pt_BarDat,
 }
 
+
+class PktReader(threading.Thread):
+    def __init__(self, serdev):
+        threading.Thread.__init__(self, name='imuahrs reader')
+
+        self.ser = serdev
+        self.terminate = threading.Event()
+        self.pkt_in_queue = Queue()
+        self.ser.setTimeout(2.0)
+        self.daemon = True
+
+    def stop(self):
+        self.terminate.set()
+
+    def getQueue(self):
+        return self.pkt_in_queue
+
+    def send(self, pkt):
+        if isinstance(pkt, PacketBase):
+            self.ser.write(pkt.serialize())
+        else:
+            raise DesError
+
+    def run(self):
+        state = 'S'
+        msgid = 0
+        time = 0
+        len_ = 0
+        crc = 0
+        payload = bytearray()
+
+        while not self.terminate.is_set():
+            c = self.ser.read(1)
+            if len(c) == 0:
+                continue
+
+            b = bytearray(c)
+
+            if state == 'S':
+                if b[0] != PROTO_START:
+                    continue
+                state = 'M'
+
+            elif state == 'M':
+                msgid = b[0]
+                crc = _crc8(0, b)
+                state = 'TL'
+
+            elif state == 'TL':
+                time = b[0]
+                crc = _crc8(crc, b)
+                state = 'TH'
+
+            elif state == 'TH':
+                time |= b[0] << 8
+                crc = _crc8(crc, b)
+                state = 'L'
+
+            elif state == 'L':
+                len_ = b[0]
+                crc = _crc8(crc, b)
+                if len_ > 0:
+                    state = 'P'
+                else:
+                    state = 'C'
+
+            elif state == 'C':
+                if crc == b[0]:
+                    self._insert_packet(msgid, time, payload)
+                else:
+                    print "crc error: MSGID: {} TIME: {} LEN: {} CRC: {} = {} {} {}".format(
+                        msgid, time, len_, b, crc, c, len(c))
+
+                state = 'S'
+
+            if state == 'P': # pass thrugh payload receive from 'L'
+                buf = self.ser.read(len_)
+                if (len(buf) != len_):
+                    state = 'S'
+                    print "short read"
+                    continue
+
+                payload = bytearray(buf)
+                crc = _crc8(crc, payload)
+                state = 'C'
+
+    def _insert_packet(self, msgid, time, payload):
+        if PKT_TYPES.has_key(msgid):
+            try:
+                pkt = PKT_TYPES[msgid](time, payload)
+                self.pkt_in_queue.put(pkt)
+                self.pkt_in_queue.task_done()
+            except DesError:
+                print "bad packet"
+        else:
+            print "unknown msgid", msgid
 
