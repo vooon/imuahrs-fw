@@ -1,8 +1,8 @@
 /**
  ******************************************************************************
- * @file       pios_bmp085.h
+ * @file       pios_crc.h
  * @author     The OpenPilot Team, http://www.openpilot.org Copyright (C) 2010.
- * @brief      BMP085 functions header.
+ * @brief      CRC functions header.
  * @see        The GNU Public License (GPL) Version 3
  *
  *****************************************************************************/
@@ -22,15 +22,10 @@
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef TASK_BMP085_H
-#define TASK_BMP085_H
+#ifndef PIOS_CRC_H
+#define PIOS_CRC_H
 
-#include "hal.h"
-#include "alert.h"
+uint8_t PIOS_CRC_updateByte(uint8_t crc, const uint8_t data);
+uint8_t PIOS_CRC_updateCRC(uint8_t crc, const uint8_t *data, int32_t length);
 
-/* Public Functions */
-extern void bmp085_init();
-extern alert_status_t bmp085_get_status(void);
-static inline bmp085_reconfigure(void) {  }; /* stub reconfiguration for sensor */
-
-#endif /* TASK_BMP085_H */
+#endif /* PIOS_CRC_H */

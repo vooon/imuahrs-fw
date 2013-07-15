@@ -95,7 +95,11 @@ static const I2CConfig i2c1cfg = {
 int main(void)
 {
 	enum led_status lstat = LST_INIT;
-	EventListener el1;
+	EventListener el0;
+	alert_status_t proto_st = ALST_INIT;
+	alert_status_t bmp085_st = ALST_INIT;
+	alert_status_t mpu6050_st = ALST_INIT;
+	alert_status_t hmc5883_st = ALST_INIT;
 
 	/*
 	 * System initializations.
@@ -117,14 +121,40 @@ int main(void)
 	/* Activate i2c */
 	i2cStart(&I2CD1, &i2c1cfg);
 
+	/* alart subsys */
+	chEvtInit(&alert_event_source);
+	chEvtRegister(&alert_event_source, &el0, 0);
+
 	/* init devices */
-	chThdSleepMilliseconds(5000);
 	bmp085_init();
 
+	chThdSleepMilliseconds(100);
+	bmp085_st = bmp085_get_status();
+
 	while (TRUE) {
-		chThdSleepMilliseconds(50);
+		eventmask_t msk = chEvtWaitAllTimeout(ALL_EVENTS, MS2ST(100));
+
+		if (msk & EVENT_MASK(0)) {
+			flagsmask_t fl = chEvtGetAndClearFlags(&el0);
+
+			debug("event flags: 0x%08x\n", fl);
+
+			if (fl & ALERT_FLAG_BMP085)
+				bmp085_st = bmp085_get_status();
+
+
+			//mpu6050_st = mpu6050_get_status();
+			//hmc5882_st = hmc5883_get_status();
+			//proto_st = pr_get_status();
+		}
+
+		if (bmp085_st == ALST_INIT /* || mpu6050_st == ALST_INIT || hmc5883_st == ALST_INIT*/)
+			lstat = LST_INIT;
+		else if (bmp085_st == ALST_NORMAL /* && mpu6050_st == ALST_NORMAL && hmc5883_st == ALST_NORMAL*/)
+			lstat = LST_NORMAL;
+		else if (bmp085_st == ALST_FAIL /* || mpu6050_st == ALST_FAIL || hmc5883_st == ALST_FAIL*/)
+			lstat = LST_FAIL;
 
 		led_update(lstat);
-
 	}
 }

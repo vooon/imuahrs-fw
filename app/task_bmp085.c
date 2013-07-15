@@ -1,11 +1,5 @@
 /**
  ******************************************************************************
- * @addtogroup PIOS PIOS Core hardware abstraction layer
- * @{
- * @addtogroup PIOS_BMP085 BMP085 Functions
- * @brief Hardware functions to deal with the altitude pressure sensor
- * @{
- *
  * @file       pios_bmp085.c
  * @author     The OpenPilot Team, http://www.openpilot.org Copyright (C) 2010.
  * @brief      BMP085 Pressure Sensor Routines
@@ -29,6 +23,7 @@
  */
 
 #include "task_bmp085.h"
+#include "protocol.h"
 
 /* BMP085 Addresses */
 #define BMP085_I2C_ADDR     0x77
@@ -42,7 +37,7 @@
 #define BMP085_ADC_MSB      0xF6
 #define BMP085_P0           101325
 
-#define I2C_TIMEOUT    MS2ST(10)
+#define I2C_TIMEOUT    MS2ST(5)
 
 struct calib_data {
     int16_t  AC1;
@@ -59,8 +54,8 @@ struct calib_data {
 };
 
 /* Thread */
-static WORKING_AREA(wa_bmp085, 1024);
-static msg_t thd_bmp085(void *arg __attribute__((notused)));
+static WORKING_AREA(wa_bmp085, 256);
+static msg_t thd_bmp085(void *arg UNUSED);
 
 /* Local Variables */
 static struct calib_data calib_data;
@@ -137,15 +132,13 @@ void bmp085_init()
 	chThdCreateStatic(wa_bmp085, sizeof(wa_bmp085), NORMALPRIO, thd_bmp085, NULL);
 }
 
-static msg_t thd_bmp085(void *arg)
+static msg_t thd_bmp085(void *arg UNUSED)
 {
 	uint8_t data[3] = { 0, 0, 0 };
 	msg_t ret;
 
 	sensor_status = ALST_INIT;
 	chRegSetThreadName("bmp085");
-
-	debug("bmp085: init\n");
 
 	for (int i = 0; i < 3; i++) {
 		ret = bmp085_reg_readm(BMP085_ID_ADDR, data, 2); /* 2 - hardware error with 1-byte transfers on F1 */
@@ -158,7 +151,6 @@ static msg_t thd_bmp085(void *arg)
 
 	if (data[0] != 0x55 || ret != I2CD_NO_ERROR) {
 		ALERT_SET_FAIL(BMP085, sensor_status);
-		debug("bmp085: not BMP085! ID = 0x%02X, ret = %d\n", data[0], ret);
 		return -1; /* Not BMP085! exiting */
 	}
 
@@ -166,12 +158,6 @@ static msg_t thd_bmp085(void *arg)
 		ALERT_SET_FAIL(BMP085, sensor_status);
 		chThdSleepMilliseconds(5);
 	}
-
-	debug("bmp085: calibration deaded. AC = [%d, %d, %d, %d, %d, %d], B = [%d, %d], MB = %d, MC = %d, MD = %d\n",
-			calib_data.AC1, calib_data.AC2, calib_data.AC3,
-			calib_data.AC4, calib_data.AC5, calib_data.AC6,
-			calib_data.B1, calib_data.B2,
-			calib_data.MB, calib_data.MC, calib_data.MD);
 
 	while (!chThdShouldTerminate()) {
 		chThdSleepMilliseconds(10);
@@ -232,9 +218,8 @@ static msg_t thd_bmp085(void *arg)
 		X2 = (-7357 * P) >> 16;
 		pressure = P + ((X1 + X2 + 3791) >> 4);
 
-		/* TODO send msg */
 		ALERT_SET_NORMAL(BMP085, sensor_status);
-		debug("bmp085: p:%d t:%d\n", pressure, temperature);
+		pt_send_bar_dat(pressure, temperature);
 	}
 
 	return 0;
