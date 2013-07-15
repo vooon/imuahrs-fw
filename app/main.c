@@ -22,6 +22,7 @@
 
 #include "led.h"
 #include "alert.h"
+#include "protocol.h"
 #include "task_bmp085.h"
 
 EVENTSOURCE_DECL(alert_event_source);
@@ -126,9 +127,11 @@ int main(void)
 	chEvtRegister(&alert_event_source, &el0, 0);
 
 	/* init devices */
+	pt_init();
 	bmp085_init();
 
 	chThdSleepMilliseconds(100);
+	proto_st = pt_get_status();
 	bmp085_st = bmp085_get_status();
 
 	while (TRUE) {
@@ -142,17 +145,18 @@ int main(void)
 			if (fl & ALERT_FLAG_BMP085)
 				bmp085_st = bmp085_get_status();
 
+			if (fl & ALERT_FLAG_PROTO)
+				proto_st = pt_get_status();
 
 			//mpu6050_st = mpu6050_get_status();
 			//hmc5882_st = hmc5883_get_status();
-			//proto_st = pr_get_status();
 		}
 
-		if (bmp085_st == ALST_INIT /* || mpu6050_st == ALST_INIT || hmc5883_st == ALST_INIT*/)
+		if (proto_st == ALST_INIT || bmp085_st == ALST_INIT /* || mpu6050_st == ALST_INIT || hmc5883_st == ALST_INIT*/)
 			lstat = LST_INIT;
-		else if (bmp085_st == ALST_NORMAL /* && mpu6050_st == ALST_NORMAL && hmc5883_st == ALST_NORMAL*/)
+		else if (proto_st == ALST_NORMAL && bmp085_st == ALST_NORMAL /* && mpu6050_st == ALST_NORMAL && hmc5883_st == ALST_NORMAL*/)
 			lstat = LST_NORMAL;
-		else if (bmp085_st == ALST_FAIL /* || mpu6050_st == ALST_FAIL || hmc5883_st == ALST_FAIL*/)
+		else if (proto_st == ALST_FAIL || bmp085_st == ALST_FAIL /* || mpu6050_st == ALST_FAIL || hmc5883_st == ALST_FAIL*/)
 			lstat = LST_FAIL;
 
 		led_update(lstat);

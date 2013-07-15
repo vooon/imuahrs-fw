@@ -2,6 +2,10 @@
 #include "protocol.h"
 #include "pios_crc.h" /* use crc functions from OpenPilot */
 
+#include "task_bmp085.h"
+//#include "task_hmc5883.h"
+//#include "task_mpu6050.h"
+
 /* Thread */
 static WORKING_AREA(wa_protocol, 1024);
 static msg_t thd_protocol(void *arg UNUSED);
