@@ -89,6 +89,11 @@ static msg_t thd_protocol(void *arg UNUSED)
 			pkt_len = (uint8_t) ret;
 			pkt_crc = PIOS_CRC_updateByte(pkt_crc, ret);
 			rx_state = PR_PAYLOAD;
+			if (pkt_len == 0) {
+				rx_state = PR_CRC;
+				break;
+			}
+			/* fall through if payload exists */
 
 		case PR_PAYLOAD:
 			ret = sdReadTimeout(&SD2, pkt_payload, pkt_len, SER_PAYLOAD_TIMEOUT);
@@ -130,10 +135,8 @@ static msg_t pt_send_pkt(uint8_t msgid, const uint8_t *payload, size_t payload_l
 {
 	msg_t ret;
 	uint8_t crc;
-	uint16_t time;
+	uint16_t time = chTimeNow() * 1000 / CH_FREQUENCY; /* systime -> msec */
 	uint8_t header[] = { PROTO_START, msgid, time & 0xff, time >> 8, payload_len };
-
-	time = chTimeNow() * 1000 / CH_FREQUENCY; /* systime -> msec */
 
 	chMtxLock(&tx_mutex);
 
