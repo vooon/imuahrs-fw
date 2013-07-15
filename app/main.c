@@ -135,7 +135,7 @@ int main(void)
 	bmp085_st = bmp085_get_status();
 
 	while (TRUE) {
-		eventmask_t msk = chEvtWaitAllTimeout(ALL_EVENTS, MS2ST(100));
+		eventmask_t msk = chEvtWaitOneTimeout(ALL_EVENTS, MS2ST(100));
 
 		if (msk & EVENT_MASK(0)) {
 			flagsmask_t fl = chEvtGetAndClearFlags(&el0);
@@ -152,12 +152,12 @@ int main(void)
 			//hmc5882_st = hmc5883_get_status();
 		}
 
-		if (proto_st == ALST_INIT || bmp085_st == ALST_INIT /* || mpu6050_st == ALST_INIT || hmc5883_st == ALST_INIT*/)
+		if (proto_st == ALST_FAIL || bmp085_st == ALST_FAIL /* || mpu6050_st == ALST_FAIL || hmc5883_st == ALST_FAIL*/)
+			lstat = LST_FAIL;
+		else if (proto_st == ALST_INIT || bmp085_st == ALST_INIT /* || mpu6050_st == ALST_INIT || hmc5883_st == ALST_INIT*/)
 			lstat = LST_INIT;
 		else if (proto_st == ALST_NORMAL && bmp085_st == ALST_NORMAL /* && mpu6050_st == ALST_NORMAL && hmc5883_st == ALST_NORMAL*/)
 			lstat = LST_NORMAL;
-		else if (proto_st == ALST_FAIL || bmp085_st == ALST_FAIL /* || mpu6050_st == ALST_FAIL || hmc5883_st == ALST_FAIL*/)
-			lstat = LST_FAIL;
 
 		led_update(lstat);
 	}
