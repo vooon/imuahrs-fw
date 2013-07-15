@@ -140,8 +140,6 @@ int main(void)
 		if (msk & EVENT_MASK(0)) {
 			flagsmask_t fl = chEvtGetAndClearFlags(&el0);
 
-			debug("event flags: 0x%08x\n", fl);
-
 			if (fl & ALERT_FLAG_BMP085)
 				bmp085_st = bmp085_get_status();
 
@@ -150,6 +148,8 @@ int main(void)
 
 			//mpu6050_st = mpu6050_get_status();
 			//hmc5882_st = hmc5883_get_status();
+
+			pt_set_sens_state(mpu6050_st, hmc5883_st, bmp085_st);
 		}
 
 		if (proto_st == ALST_FAIL || bmp085_st == ALST_FAIL /* || mpu6050_st == ALST_FAIL || hmc5883_st == ALST_FAIL*/)

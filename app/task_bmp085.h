@@ -31,6 +31,6 @@
 /* Public Functions */
 extern void bmp085_init();
 extern alert_status_t bmp085_get_status(void);
-static inline bmp085_reconfigure(void) {  }; /* stub reconfiguration for sensor */
+static inline void bmp085_reconfigure(void) {  }; /* stub reconfiguration for sensor */
 
 #endif /* TASK_BMP085_H */

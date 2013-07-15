@@ -1,4 +1,6 @@
 
+#include "ch.h"
+#include "evtimer.h"
 #include "protocol.h"
 #include "pios_crc.h" /* use crc functions from OpenPilot */
 
@@ -10,10 +12,12 @@
 static WORKING_AREA(wa_protocol, 1024);
 static msg_t thd_protocol(void *arg UNUSED);
 static void pt_process_pkt(uint8_t msgid, uint16_t time, const uint8_t *payload, size_t payload_len);
+static msg_t pt_send_pkt(uint8_t msgid, const uint8_t *payload, size_t payload_len);
 
-/* Lacal variables */
+/* Local variables */
 static volatile alert_status_t protocol_status = ALST_INIT;
 static MUTEX_DECL(tx_mutex);
+static EvTimer heartbeat_et;
 
 static volatile uint8_t sens_test_state;
 static volatile bool allow_mpu_dat;
@@ -37,6 +41,7 @@ static const uint8_t fw_version[] = "IMU AHRS 0.0.0 " __DATE__;
 
 #define SER_TIMEOUT		MS2ST(10)
 #define SER_PAYLOAD_TIMEOUT	MS2ST(20)
+#define HEARTBEAT_TIMEOUT	MS2ST(1000)
 
 
 void pt_init(void)
@@ -47,14 +52,25 @@ void pt_init(void)
 static msg_t thd_protocol(void *arg UNUSED)
 {
 	msg_t ret;
-	uint8_t msgid;
-	uint16_t pkt_time;
-	size_t pkt_len;
+	uint8_t msgid = 0;
+	uint16_t pkt_time = 0;
+	size_t pkt_len = 0;
 	uint8_t pkt_payload[MAX_PAYLOAD];
-	uint8_t pkt_crc;
+	uint8_t pkt_crc = 0;
 	enum proto_rx_state rx_state = PR_WAIT_START;
+	EventListener el0;
+
+	evtInit(&heartbeat_et, HEARTBEAT_TIMEOUT);
+	chEvtRegister(&heartbeat_et.et_es, &el0, 0);
+
+	evtStart(&heartbeat_et);
 
 	while (!chThdShouldTerminate()) {
+		eventmask_t mask = chEvtGetAndClearEvents(ALL_EVENTS);
+
+		if (mask & EVENT_MASK(0)) {
+			pt_send_pkt(ID_HEARTBEAT, NULL, 0);
+		}
 
 		ret = sdGetTimeout(&SD2, SER_TIMEOUT);
 		if (ret == Q_TIMEOUT || ret == Q_RESET)
@@ -145,10 +161,12 @@ static msg_t pt_send_pkt(uint8_t msgid, const uint8_t *payload, size_t payload_l
 	if (ret == Q_TIMEOUT || ret == Q_RESET)
 		goto unlock_ret;
 
-	crc = PIOS_CRC_updateCRC(crc, payload, payload_len);
-	ret = sdWriteTimeout(&SD2, payload, payload_len, SER_PAYLOAD_TIMEOUT);
-	if (ret == Q_TIMEOUT || ret == Q_RESET)
-		goto unlock_ret;
+	if (payload_len > 0) {
+		crc = PIOS_CRC_updateCRC(crc, payload, payload_len);
+		ret = sdWriteTimeout(&SD2, payload, payload_len, SER_PAYLOAD_TIMEOUT);
+		if (ret == Q_TIMEOUT || ret == Q_RESET)
+			goto unlock_ret;
+	}
 
 	ret = sdPutTimeout(&SD2, crc, SER_TIMEOUT);
 
@@ -157,7 +175,7 @@ unlock_ret:
 	return ret;
 }
 
-void pt_process_pkt(uint8_t msgid, uint16_t time, const uint8_t *payload, size_t payload_len)
+void pt_process_pkt(uint8_t msgid, uint16_t time UNUSED, const uint8_t *payload, size_t payload_len)
 {
 	msg_t ret = RDY_OK;
 
@@ -167,7 +185,7 @@ void pt_process_pkt(uint8_t msgid, uint16_t time, const uint8_t *payload, size_t
 		break;
 
 	case ID_SENS_TEST:
-		ret = pt_send_pkt(msgid, &sens_test_state, sizeof(sens_test_state));
+		ret = pt_send_pkt(msgid, (const uint8_t *)&sens_test_state, sizeof(sens_test_state));
 		break;
 
 	case ID_MESG_EN:
@@ -179,6 +197,13 @@ void pt_process_pkt(uint8_t msgid, uint16_t time, const uint8_t *payload, size_t
 		allow_mpu_dat = payload[0] & 0x01;
 		allow_mag_dat = payload[0] & 0x02;
 		allow_bar_dat = payload[0] & 0x04;
+
+		if (!allow_mpu_dat && !allow_mag_dat && !allow_bar_dat) {
+			evtStart(&heartbeat_et);
+		}
+		else {
+			evtStop(&heartbeat_et);
+		}
 		break;
 
 	case ID_MPU_CFG:
@@ -219,9 +244,24 @@ void pt_set_sens_state(alert_status_t mpu, alert_status_t hmc, alert_status_t bm
 
 void pt_send_mpu_dat(int16_t gx, int16_t gy, int16_t gz, int16_t ax, int16_t ay, int16_t az, int16_t temp)
 {
+	msg_t ret;
+	struct pt_mpu_dat data = {
+		.gyro_x = gx,
+		.gyro_y = gy,
+		.gyro_z = gz,
+		.accel_x = ax,
+		.accel_y = ay,
+		.accel_z = az,
+		.temperature = temp
+	};
+
 	if (!allow_mpu_dat)
 		return;
 
+	ret = pt_send_pkt(ID_MPU_DAT, (uint8_t *)&data, sizeof(data));
+	if (ret == Q_TIMEOUT || ret == Q_RESET) {
+		ALERT_SET_FAIL(PROTO, protocol_status);
+	}
 }
 
 void pt_send_mag_dat(int16_t mag_x, int16_t mag_y, int16_t mag_z)
