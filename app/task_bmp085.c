@@ -137,7 +137,7 @@ static msg_t thd_bmp085(void *arg UNUSED)
 	uint8_t data[3] = { 0, 0, 0 };
 	msg_t ret;
 
-	sensor_status = ALST_INIT;
+	ALERT_SET_INIT(BMP085, sensor_status);
 	chRegSetThreadName("bmp085");
 
 	for (int i = 0; i < 3; i++) {

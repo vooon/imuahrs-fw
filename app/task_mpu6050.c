@@ -1,11 +1,5 @@
 /**
  ******************************************************************************
- * @addtogroup PIOS PIOS Core hardware abstraction layer
- * @{
- * @addtogroup PIOS_MPU6000 MPU6000 Functions
- * @brief Deals with the hardware interface to the 3-axis gyro
- * @{
- *
  * @file       pios_mpu000.c
  * @author     The OpenPilot Team, http://www.openpilot.org Copyright (C) 2012.
  * @brief      MPU6000 6-axis gyro and accel chip
@@ -244,6 +238,9 @@ static msg_t thd_mpu6050(void *arg UNUSED)
 	msg_t ret;
 	struct mpu6050_data data = { 0, 0, 0, 0, 0, 0, 0 };
 	uint8_t databuf[sizeof(data)];
+
+	ALERT_SET_INIT(MPU6050, sensor_status);
+	chRegSetThreadName("mpu6050");
 
 	if (!mpu6050_probe(MPU6050_I2C_ADDR0)) {
 		/* try find on addr1 */
