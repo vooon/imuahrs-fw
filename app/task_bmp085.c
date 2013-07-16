@@ -94,7 +94,7 @@ static inline msg_t bmp085_reg_writeb(uint8_t reg, uint8_t val)
 	return ret;
 }
 
-static msg_t bmp085_read_calibration()
+static msg_t bmp085_read_calibration(void)
 {
 	uint8_t data[BMP085_CALIB_LEN];
 	msg_t ret;
