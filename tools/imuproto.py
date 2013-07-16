@@ -170,12 +170,32 @@ class Pt_BmpCfg(PacketBase):
 
 class Pt_MpuDat(PacketBase):
     msgid = 0xd0
+    gyro_x = 0
+    gyro_y = 0
+    gyro_z = 0
+    accle_x = 0
+    accle_y = 0
+    accle_z = 0
+    temperature = 0
 
     def deserialize_payload(self, buf):
-        pass
+        if len(buf) != 14:
+                raise DesError
+
+        self.gyro_x =  buf[0] | buf[1] << 8
+        self.gyro_y =  buf[2] | buf[3] << 8
+        self.gyro_z =  buf[4] | buf[5] << 8
+        self.accel_x = buf[6] | buf[7] << 8
+        self.accel_y = buf[8] | buf[9] << 8
+        self.accel_z = buf[10] | buf[11] << 8
+        self.temperature = buf[12] | buf[13] << 8
 
     def __repr__(self):
-        return "<Pt_MpuDat: ({} ms) TODO>".format(self.time)
+        return "<Pt_MpuDat: ({} ms) gyro=[{}, {}, {}] accel=[{}, {}, {}] temp={}>".format(
+                self.time,
+                self.gyro_x, self.gyro_y, self.gyro_z,
+                self.accel_x, self.accel_y, self.accel_z,
+                self.temperature)
 
 
 class Pt_MagDat(PacketBase):
@@ -185,10 +205,16 @@ class Pt_MagDat(PacketBase):
     mag_z = 0
 
     def deserialize_payload(self, buf):
-        pass
+        if len(buf) != 6:
+            raise DesError
+
+        self.mag_x =  buf[0] | buf[1] << 8
+        self.mag_y =  buf[2] | buf[3] << 8
+        self.mag_z =  buf[4] | buf[5] << 8
 
     def __repr__(self):
-        return "<Pt_MagDat: ({} ms) TODO>".format(self.time)
+        return "<Pt_MagDat: ({} ms) mag=[{}, {}, {}]>".format(
+            self.time, self.mag_x, self.mag_y, self.mag_z)
 
 
 class Pt_BarDat(PacketBase):
