@@ -124,7 +124,7 @@ static bool mpu6050_probe(i2caddr_t a)
 
 	for (int i = 0; i < 3; i++) {
 		ret = mpu6050_reg_readm(MPU6050_WHOAMI, idbuf, 2); /* 2 - hardware bug on F1 */
-		if (ret != I2CD_NO_ERROR)
+		if (ret == I2CD_NO_ERROR)
 			return idbuf[0] == 0x68;
 	}
 
@@ -161,7 +161,7 @@ static msg_t mpu6050_config(struct mpu6050_cfg const *cfg)
 		ret = mpu6050_reg_readm(MPU6050_USER_CTRL_REG, data, 2);
 		if (ret != I2CD_NO_ERROR)
 			return ret;
-		if (data[0] & (MPU6050_USERCTL_GYRO_RST | MPU6050_USERCTL_SIG_COND | MPU6050_USERCTL_FIFO_RST))
+		if (!(data[0] & (MPU6050_USERCTL_GYRO_RST | MPU6050_USERCTL_SIG_COND | MPU6050_USERCTL_FIFO_RST)))
 			break;
 		chThdSleepMilliseconds(5);
 	} while(true);
