@@ -88,8 +88,6 @@ def main():
 
     parser.add_argument("+mpucfg", dest="mpu_cfg", default=None, type=anyint, nargs=3,
                         help="send mpu_cfg message (default: 0x18 0x10 0x00)")
-    parser.add_argument("+hmccfg", dest="hmc_cfg", default=None, type=anyint, nargs=4,
-                        help="send hmc_cfg message (default: todo)")
 
     args = parser.parse_args();
 
@@ -118,14 +116,6 @@ def main():
         mcf.accel_scale = args.mpu_cfg[1]
         mcf.filter_scale = args.mpu_cfg[2]
         reader.send(mcf)
-
-    if args.hmc_cfg is not None:
-        hcf = ipr.Pt_HmcCfg()
-        hmc.m_odr = args.hmc_cfg[0]
-        hmc.meas_conf = args.hmc_cfg[1]
-        hmc.gain = args.hmc_cfg[2]
-        hmc.mode = args.hmc_cfg[3]
-        reader.send(hcf)
 
     while True:
         kq.join()

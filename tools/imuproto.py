@@ -148,18 +148,9 @@ class Pt_MpuCfg(PacketBase):
 
 class Pt_HmcCfg(PacketBase):
     msgid = 0xc2
-    m_odr = 0
-    meas_conf = 0
-    gain = 0
-    mode = 0
-
-    def serialize_payload(self):
-        return bytearray((self.m_odr, self.meas_conf, self.gain, self.mode))
 
     def __repr__(self):
-        return "<Pt_HmcCfg: ({} ms) m_odr={} meas_conf={} gain={} mode={}>".format(
-            self.time, self.m_odr, self.meas_conf, self.gain, self.mode)
-
+        return "<Pt_HmcCfg: ({} ms)>".format(self.time)
 
 class Pt_BmpCfg(PacketBase):
     msgid = 0xc3
