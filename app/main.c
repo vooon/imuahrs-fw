@@ -25,6 +25,7 @@
 #include "protocol.h"
 #include "task_bmp085.h"
 #include "task_mpu6050.h"
+#include "task_hmc5883.h"
 
 EVENTSOURCE_DECL(alert_event_source);
 
@@ -97,8 +98,8 @@ static const EXTConfig extcfg = {
 		{EXT_CH_MODE_DISABLED, NULL},
 		{EXT_CH_MODE_DISABLED, NULL},
 		{EXT_CH_MODE_DISABLED, NULL},
-		{EXT_CH_MODE_DISABLED, NULL},
-		{EXT_CH_MODE_DISABLED, NULL}, /* PA5 - HMC5883 DRDY */
+		{EXT_CH_MODE_DISABLED, NULL}, /* PA4 - BMP085 EOC (nc) */
+		{EXT_CH_MODE_RISING_EDGE | EXT_CH_MODE_AUTOSTART | EXT_MODE_GPIOA, hmc5883_exti_handler}, /* PA5 - HMC5883 DRDY */
 		{EXT_CH_MODE_RISING_EDGE | EXT_CH_MODE_AUTOSTART | EXT_MODE_GPIOA, mpu6050_exti_handler}, /* PA6 - MPU6050 IRQ */
 		{EXT_CH_MODE_DISABLED, NULL}, /* PA7 - MPU6050 FSYNC */
 		{EXT_CH_MODE_DISABLED, NULL},
@@ -125,6 +126,14 @@ static const struct mpu6050_cfg mpu6050cfg = {
 	.gyro_range = MPU6050_SCALE_2000_DEG,
 	.filter = MPU6050_LOWPASS_256_HZ,
 	.orientation = MPU6050_TOP_0DEG
+};
+
+static const struct hmc5883_cfg hmc5883cfg = {
+	.M_ODR = HMC5883_ODR_75,
+	.Meas_Conf = HMC5883_MEASCONF_NORMAL,
+	.Gain = HMC5883_GAIN_1_9,
+	.Mode = HMC5883_MODE_CONTINUOUS
+
 };
 
 /*
@@ -170,11 +179,8 @@ int main(void)
 	pt_init();
 	mpu6050_init(&mpu6050cfg);
 	bmp085_init();
-
-	chThdSleepMilliseconds(100);
-	proto_st = pt_get_status();
-	mpu6050_st = mpu6050_get_status();
-	bmp085_st = bmp085_get_status();
+	chThdSleepMilliseconds(250); /* give some time for mpu6050 configuration */
+	hmc5883_init(&hmc5883cfg);
 
 	while (TRUE) {
 		eventmask_t msk = chEvtWaitOneTimeout(ALL_EVENTS, MS2ST(100));
@@ -182,25 +188,26 @@ int main(void)
 		if (msk & EVENT_MASK(0)) {
 			flagsmask_t fl = chEvtGetAndClearFlags(&el0);
 
-			if (fl & ALERT_FLAG_BMP085)
-				bmp085_st = bmp085_get_status();
-
 			if (fl & ALERT_FLAG_PROTO)
 				proto_st = pt_get_status();
 
 			if (fl & ALERT_FLAG_MPU6050)
 				mpu6050_st = mpu6050_get_status();
 
-			//hmc5882_st = hmc5883_get_status();
+			if (fl & ALERT_FLAG_HMC5883)
+				hmc5883_st = hmc5883_get_status();
+
+			if (fl & ALERT_FLAG_BMP085)
+				bmp085_st = bmp085_get_status();
 
 			pt_set_sens_state(mpu6050_st, hmc5883_st, bmp085_st);
 		}
 
-		if (proto_st == ALST_FAIL || bmp085_st == ALST_FAIL /* || mpu6050_st == ALST_FAIL || hmc5883_st == ALST_FAIL*/)
+		if (proto_st == ALST_FAIL || mpu6050_st == ALST_FAIL || hmc5883_st == ALST_FAIL || bmp085_st == ALST_FAIL)
 			lstat = LST_FAIL;
-		else if (proto_st == ALST_INIT || bmp085_st == ALST_INIT /* || mpu6050_st == ALST_INIT || hmc5883_st == ALST_INIT*/)
+		else if (proto_st == ALST_INIT || mpu6050_st == ALST_INIT || hmc5883_st == ALST_INIT || bmp085_st == ALST_INIT)
 			lstat = LST_INIT;
-		else if (proto_st == ALST_NORMAL && bmp085_st == ALST_NORMAL /* && mpu6050_st == ALST_NORMAL && hmc5883_st == ALST_NORMAL*/)
+		else if (proto_st == ALST_NORMAL && mpu6050_st == ALST_NORMAL && hmc5883_st == ALST_NORMAL && bmp085_st == ALST_NORMAL)
 			lstat = LST_NORMAL;
 
 		led_update(lstat);
