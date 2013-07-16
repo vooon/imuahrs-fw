@@ -171,7 +171,7 @@ int main(void)
 	/* Activate exti */
 	extStart(&EXTD1, &extcfg);
 
-	/* alart subsys */
+	/* alert subsys */
 	chEvtInit(&alert_event_source);
 	chEvtRegister(&alert_event_source, &el0, 0);
 
@@ -213,3 +213,4 @@ int main(void)
 		led_update(lstat);
 	}
 }
+
