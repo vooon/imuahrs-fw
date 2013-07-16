@@ -26,8 +26,8 @@
 #include "pios_crc.h" /* use crc functions from OpenPilot */
 
 #include "task_bmp085.h"
-//#include "task_hmc5883.h"
-//#include "task_mpu6050.h"
+#include "task_hmc5883.h"
+#include "task_mpu6050.h"
 
 /* Thread */
 static WORKING_AREA(wa_protocol, 1024);
@@ -228,17 +228,20 @@ void pt_process_pkt(uint8_t msgid, uint16_t time UNUSED, const uint8_t *payload,
 		break;
 
 	case ID_MPU_CFG:
-		if (payload_len = 3) {
-			mpu6050_configure_ranges(payload[0], payload[1], payload[2]);
+		if (payload_len == 3) {
+			ret = Q_RESET;
+			break;
 		}
+
+		mpu6050_configure_ranges(payload[0], payload[1], payload[2]);
 		break;
 
 	case ID_HMC_CFG:
-		/* TODO */
+		hmc5883_reconfigure(); /* placeholder */
 		break;
 
 	case ID_BMP_CFG:
-		bmp085_reconfigure();
+		bmp085_reconfigure(); /* placeholder */
 		break;
 
 	default:

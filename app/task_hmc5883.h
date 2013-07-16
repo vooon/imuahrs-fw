@@ -69,6 +69,7 @@ struct hmc5883_cfg {
 /* Public Functions */
 extern void hmc5883_init(const struct hmc5883_cfg *new_cfg);
 extern alert_status_t hmc5883_get_status(void);
+static inline void hmc5883_reconfigure(void) {  }; /* stub reconfiguration for sensor */
 
 extern void hmc5883_exti_handler(EXTDriver *extp UNUSED, expchannel_t channel UNUSED);
 
