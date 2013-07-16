@@ -202,7 +202,7 @@ static msg_t hmc5883_config(struct hmc5883_cfg const *cfg)
 void hmc5883_init(const struct hmc5883_cfg *cfg)
 {
 	dev_cfg = cfg;
-	thdp_hmc5883 = chThdCreateStatic(wa_hmc5883, sizeof(wa_hmc5883), NORMALPRIO, thd_hmc5883, NULL);
+	thdp_hmc5883 = chThdCreateStatic(wa_hmc5883, sizeof(wa_hmc5883), HIGHPRIO, thd_hmc5883, NULL);
 }
 
 static msg_t thd_hmc5883(void *arg UNUSED)

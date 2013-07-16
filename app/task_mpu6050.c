@@ -230,7 +230,7 @@ static msg_t mpu6050_get_fifo_depth(void)
 void mpu6050_init(const struct mpu6050_cfg *cfg)
 {
 	dev.cfg = cfg;
-	thdp_mpu6050 = chThdCreateStatic(wa_mpu6050, sizeof(wa_mpu6050), NORMALPRIO, thd_mpu6050, NULL);
+	thdp_mpu6050 = chThdCreateStatic(wa_mpu6050, sizeof(wa_mpu6050), HIGHPRIO, thd_mpu6050, NULL);
 }
 
 static msg_t thd_mpu6050(void *arg UNUSED)

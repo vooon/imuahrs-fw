@@ -129,7 +129,7 @@ static msg_t bmp085_read_calibration(void)
  */
 void bmp085_init()
 {
-	chThdCreateStatic(wa_bmp085, sizeof(wa_bmp085), NORMALPRIO, thd_bmp085, NULL);
+	chThdCreateStatic(wa_bmp085, sizeof(wa_bmp085), HIGHPRIO, thd_bmp085, NULL);
 }
 
 static msg_t thd_bmp085(void *arg UNUSED)
