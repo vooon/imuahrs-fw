@@ -3,6 +3,7 @@
 
 import sys
 import imuproto as ipr
+import argparse
 
 
 class UpdStat(object):
@@ -62,19 +63,37 @@ def print_stat():
             msgid=s.msgid, min=s.minup, avg=s.avgup, max=s.maxup, cnt=s.dt_count)
 
 
-def usage():
-    print "pktshow.py <tty dev> [+-mpu] [+-mag] [+-bar]"
-
-
 def main():
-    baud = 115200
+    def anyint(string):
+        return int(string, 0)
 
-    if len(sys.argv) < 2:
-        usage()
+    parser = argparse.ArgumentParser(prefix_chars='-+')
+    parser.add_argument("device", help="com port device file")
+    parser.add_argument("baudrate", help="com port baudrate", type=int, nargs='?', default=115200)
 
-    dev = sys.argv[1]
+    parser.add_argument("+mpu", dest="mpu_en", action="store_true", default=None,
+                        help="enable mpu_dat messages")
+    parser.add_argument("-mpu", dest="mpu_en", action="store_false", default=None,
+                        help="disable mpu_dat messages")
 
-    ser = ipr.serial.Serial(dev, baud)
+    parser.add_argument("+mag", dest="mag_en", action="store_true", default=None,
+                        help="enable mag_dat messages")
+    parser.add_argument("-mag", dest="mag_en", action="store_false", default=None,
+                        help="disable mag_dat messages")
+
+    parser.add_argument("+bar", dest="bar_en", action="store_true", default=None,
+                        help="enable bar_dat messages")
+    parser.add_argument("-bar", dest="bar_en", action="store_false", default=None,
+                        help="disable bar_dat messages")
+
+    parser.add_argument("+mpucfg", dest="mpu_cfg", default=None, type=anyint, nargs=3,
+                        help="send mpu_cfg message (default: 0x18 0x10 0x00)")
+    parser.add_argument("+hmccfg", dest="hmc_cfg", default=None, type=anyint, nargs=4,
+                        help="send hmc_cfg message (default: todo)")
+
+    args = parser.parse_args();
+
+    ser = ipr.serial.Serial(args.device, args.baudrate)
     reader = ipr.PktReader(ser)
 
     kq = reader.getQueue()
@@ -86,23 +105,27 @@ def main():
     reader.send(pv)
     reader.send(st)
 
-    if len(sys.argv) > 2:
+    if args.mpu_en is not None or args.mag_en is not None or args.bar_en is not None:
         me = ipr.Pt_MesgEn()
-        for a in sys.argv[2:]:
-            if a == '+mpu':
-                me.mpu_dat_en = True
-            elif a == '-mpu':
-                me.mpu_dat_en = False
-            elif a == '+mag':
-                me.mag_dat_en = True
-            elif a == '-mag':
-                me.mag_dat_en = False
-            elif a == '+bar':
-                me.bar_dat_en = True
-            elif a == '-bar':
-                me.bar_dat_en = False
-
+        me.mpu_dat_en = args.mpu_en or False
+        me.mag_dat_en = args.mag_en or False
+        me.bar_dat_en = args.bar_en or False
         reader.send(me)
+
+    if args.mpu_cfg is not None:
+        mcf = ipr.Pt_MpuCfg()
+        mcf.gyro_scale = args.mpu_cfg[0]
+        mcf.accel_scale = args.mpu_cfg[1]
+        mcf.filter_scale = args.mpu_cfg[2]
+        reader.send(mcf)
+
+    if args.hmc_cfg is not None:
+        hcf = ipr.Pt_HmcCfg()
+        hmc.m_odr = args.hmc_cfg[0]
+        hmc.meas_conf = args.hmc_cfg[1]
+        hmc.gain = args.hmc_cfg[2]
+        hmc.mode = args.hmc_cfg[3]
+        reader.send(hcf)
 
     while True:
         kq.join()
