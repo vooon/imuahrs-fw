@@ -207,7 +207,9 @@ void pt_process_pkt(uint8_t msgid, uint16_t time UNUSED, const uint8_t *payload,
 		break;
 
 	case ID_MPU_CFG:
-		/* TODO */
+		if (payload_len = 3) {
+			mpu6050_configure_ranges(payload[0], payload[1], payload[2]);
+		}
 		break;
 
 	case ID_HMC_CFG:
