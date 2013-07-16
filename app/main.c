@@ -24,6 +24,7 @@
 #include "alert.h"
 #include "protocol.h"
 #include "task_bmp085.h"
+#include "task_mpu6050.h"
 
 EVENTSOURCE_DECL(alert_event_source);
 
@@ -90,6 +91,42 @@ static const I2CConfig i2c1cfg = {
 	FAST_DUTY_CYCLE_2
 };
 
+static const EXTConfig extcfg = {
+	{
+		{EXT_CH_MODE_DISABLED, NULL},
+		{EXT_CH_MODE_DISABLED, NULL},
+		{EXT_CH_MODE_DISABLED, NULL},
+		{EXT_CH_MODE_DISABLED, NULL},
+		{EXT_CH_MODE_DISABLED, NULL},
+		{EXT_CH_MODE_DISABLED, NULL}, /* PA5 - HMC5883 DRDY */
+		{EXT_CH_MODE_RISING_EDGE | EXT_CH_MODE_AUTOSTART | EXT_MODE_GPIOA, mpu6050_exti_handler}, /* PA6 - MPU6050 IRQ */
+		{EXT_CH_MODE_DISABLED, NULL}, /* PA7 - MPU6050 FSYNC */
+		{EXT_CH_MODE_DISABLED, NULL},
+		{EXT_CH_MODE_DISABLED, NULL},
+		{EXT_CH_MODE_DISABLED, NULL},
+		{EXT_CH_MODE_DISABLED, NULL},
+		{EXT_CH_MODE_DISABLED, NULL},
+		{EXT_CH_MODE_DISABLED, NULL},
+		{EXT_CH_MODE_DISABLED, NULL},
+		{EXT_CH_MODE_DISABLED, NULL},
+	}
+};
+
+static const struct mpu6050_cfg mpu6050cfg = {
+	.Fifo_store = MPU6050_FIFO_TEMP_OUT | MPU6050_ACCEL_OUT |
+		MPU6050_FIFO_GYRO_X_OUT | MPU6050_FIFO_GYRO_Y_OUT | MPU6050_FIFO_GYRO_Z_OUT,
+	.Smpl_rate_div_no_dlp = 11, /* Clock at 8 kHz, downsampled by 12 for 666 Hz */
+	.Smpl_rate_div_dlp = 1,     /* with dlp on output rate is 500 Hz */
+	.interrupt_cfg = MPU6050_INT_CLR_ANYRD | MPU6050_INT_I2C_BAYPASS_EN,
+	.interrupt_en = MPU6050_INTEN_DATA_RDY,
+	.User_ctl = MPU6050_USERCTL_FIFO_EN,
+	.Pwr_mgmt_clk = MPU6050_PWRMGMT_PLL_X_CLK,
+	.accel_range = MPU6050_ACCEL_8G,
+	.gyro_range = MPU6050_SCALE_2000_DEG,
+	.filter = MPU6050_LOWPASS_256_HZ,
+	.orientation = MPU6050_TOP_0DEG
+};
+
 /*
  * Application entry point.
  */
@@ -122,16 +159,21 @@ int main(void)
 	/* Activate i2c */
 	i2cStart(&I2CD1, &i2c1cfg);
 
+	/* Activate exti */
+	extStart(&EXTD1, &extcfg);
+
 	/* alart subsys */
 	chEvtInit(&alert_event_source);
 	chEvtRegister(&alert_event_source, &el0, 0);
 
 	/* init devices */
 	pt_init();
+	mpu6050_init(&mpu6050cfg);
 	bmp085_init();
 
 	chThdSleepMilliseconds(100);
 	proto_st = pt_get_status();
+	mpu6050_st = mpu6050_get_status();
 	bmp085_st = bmp085_get_status();
 
 	while (TRUE) {
@@ -146,7 +188,9 @@ int main(void)
 			if (fl & ALERT_FLAG_PROTO)
 				proto_st = pt_get_status();
 
-			//mpu6050_st = mpu6050_get_status();
+			if (fl & ALERT_FLAG_MPU6050)
+				mpu6050_st = mpu6050_get_status();
+
 			//hmc5882_st = hmc5883_get_status();
 
 			pt_set_sens_state(mpu6050_st, hmc5883_st, bmp085_st);
