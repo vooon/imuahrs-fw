@@ -3,6 +3,7 @@
 
 import serial
 import threading
+import struct
 from Queue import Queue
 
 class DesError(Exception):
@@ -139,7 +140,7 @@ class Pt_MpuCfg(PacketBase):
     filter_scale = 0
 
     def serialize_payload(self):
-        return bytearray((self.gyro_scale, self.accel_scale, self.filter_scale))
+        return bytearray(struct.pack('<BBB', self.gyro_scale, self.accel_scale, self.filter_scale))
 
     def __repr__(self):
         return "<Pt_MpuCfg: ({} ms) gyro_scale={} accel_scale={} filter_scale={}>".format(
@@ -173,13 +174,9 @@ class Pt_MpuDat(PacketBase):
         if len(buf) != 14:
                 raise DesError
 
-        self.gyro_x =  buf[0] | buf[1] << 8
-        self.gyro_y =  buf[2] | buf[3] << 8
-        self.gyro_z =  buf[4] | buf[5] << 8
-        self.accel_x = buf[6] | buf[7] << 8
-        self.accel_y = buf[8] | buf[9] << 8
-        self.accel_z = buf[10] | buf[11] << 8
-        self.temperature = buf[12] | buf[13] << 8
+        self.gyro_x, self.gyro_y, self.gyro_z, \
+        self.accel_x, self.accel_y, self.accel_z, \
+        self.temperature = struct.unpack('<hhhhhhh', buf)
 
     def __repr__(self):
         return "<Pt_MpuDat: ({} ms) gyro=[{}, {}, {}] accel=[{}, {}, {}] temp={}>".format(
@@ -199,9 +196,7 @@ class Pt_MagDat(PacketBase):
         if len(buf) != 6:
             raise DesError
 
-        self.mag_x =  buf[0] | buf[1] << 8
-        self.mag_y =  buf[2] | buf[3] << 8
-        self.mag_z =  buf[4] | buf[5] << 8
+        self.mag_x, self.mag_y, self.mag_z = struct.unpack('<hhh', buf)
 
     def __repr__(self):
         return "<Pt_MagDat: ({} ms) mag=[{}, {}, {}]>".format(
@@ -218,8 +213,7 @@ class Pt_BarDat(PacketBase):
         if len(buf) != 6:
             raise DesError
 
-        self.pressure = buf[0] | buf[1] << 8 | buf[2] << 16 | buf[3] << 24
-        self.temperature = buf[4] | buf[5] << 8
+        self.pressure, self.temperature = struct.unpack('<ih', buf)
 
     def __repr__(self):
         return "<Pt_BarDat: ({} ms) pressure={} temperature={}>".format(
