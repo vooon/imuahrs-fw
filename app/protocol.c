@@ -55,7 +55,7 @@ enum proto_rx_state {
 	PR_CRC
 };
 
-static const uint8_t fw_version[] = "IMU AHRS 0.0.0 " __DATE__;
+static const uint8_t fw_version[] = "IMU AHRS 0.1.0 " __DATE__;
 
 #define PROTO_START		0x79
 #define MAX_PAYLOAD		255
