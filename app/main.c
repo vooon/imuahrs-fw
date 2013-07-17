@@ -164,6 +164,9 @@ int main(void)
 	halInit();
 	chSysInit();
 
+	/* Clear DRDY pad */
+	palClearPad(GPIOA, GPIOA_DRDY);
+
 	/* Activates serial */
 	sdStart(&SD1, NULL);
 	sdStart(&SD2, NULL);
@@ -188,6 +191,9 @@ int main(void)
 	mpu6050_init(&mpu6050cfg);
 	chThdSleepMilliseconds(250); /* give some time for mpu6050 configuration */
 	hmc5883_init(&hmc5883cfg);
+
+	/* Set DRDY pad */
+	palSetPad(GPIOA, GPIOA_DRDY);
 
 	while (TRUE) {
 		eventmask_t msk = chEvtWaitOneTimeout(ALL_EVENTS, MS2ST(100));

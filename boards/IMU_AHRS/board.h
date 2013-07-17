@@ -41,6 +41,7 @@
 /*
  * IO pins assignments.
  */
+#define GPIOA_DRDY              1
 #define GPIOA_BMP_EOC           4
 #define GPIOA_HMC_DRDY          5
 #define GPIOA_MPU_INT           6
