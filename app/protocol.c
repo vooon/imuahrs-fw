@@ -262,10 +262,16 @@ void pt_process_pkt(uint8_t msgid, uint16_t time UNUSED, const uint8_t *payload,
 
 void pt_set_sens_state(alert_status_t mpu, alert_status_t hmc, alert_status_t bmp)
 {
+	uint8_t prev_state = sens_test_state;
+
 	sens_test_state =
 		((mpu == ALST_NORMAL)? 0x3 : 0) |	/* GYRO_OK | ACCEL_OK */
 		((hmc == ALST_NORMAL)? 0x4 : 0) |	/* MAG_OK */
 		((bmp == ALST_NORMAL)? 0x8 : 0);	/* BARO_OK */
+
+	/* send notification if changed */
+	if (prev_state != sens_test_state)
+		pt_send_pkt(ID_SENS_TEST, (const uint8_t *)&sens_test_state, sizeof(sens_test_state));
 }
 
 void pt_send_mpu_dat(int16_t gx, int16_t gy, int16_t gz, int16_t ax, int16_t ay, int16_t az, int16_t temp)
