@@ -183,8 +183,9 @@ int main(void)
 
 	/* init devices */
 	pt_init();
-	mpu6050_init(&mpu6050cfg);
 	bmp085_init();
+	chThdSleepMilliseconds(50); /* power on delay */
+	mpu6050_init(&mpu6050cfg);
 	chThdSleepMilliseconds(250); /* give some time for mpu6050 configuration */
 	hmc5883_init(&hmc5883cfg);
 
