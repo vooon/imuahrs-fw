@@ -69,7 +69,7 @@ def main():
 
     parser = argparse.ArgumentParser(prefix_chars='-+')
     parser.add_argument("device", help="com port device file")
-    parser.add_argument("baudrate", help="com port baudrate", type=int, nargs='?', default=115200)
+    parser.add_argument("baudrate", help="com port baudrate", type=int, nargs='?', default=230400)
 
     parser.add_argument("+mpu", dest="mpu_en", action="store_true", default=None,
                         help="enable mpu_dat messages")
