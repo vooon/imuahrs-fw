@@ -69,7 +69,7 @@ include $(CHIBIOS)/os/kernel/kernel.mk
 include $(AHRS)/app/app.mk
 
 # Define linker script file here
-LDSCRIPT= $(AHRS)/config/STM32F103x8.ld
+LDSCRIPT= $(AHRS)/config/IMU_AHRS/STM32F103x8.ld
 
 # C sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
@@ -209,4 +209,4 @@ ifeq ($(USE_FWLIB),yes)
 endif
 
 include $(CHIBIOS)/os/ports/GCC/ARMCMx/rules.mk
-include $(AHRS)/config/openocd.mk
+include $(AHRS)/config/IMU_AHRS/openocd.mk

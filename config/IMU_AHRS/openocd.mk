@@ -1,7 +1,7 @@
 # -*- Makefile -*-
 
 OPENOCD=openocd
-OPENOCD_CONF=$(AHRS)/config/openocd_imuahrs.cfg
+OPENOCD_CONF=$(AHRS)/config/IMU_AHRS/openocd_imuahrs.cfg
 OPENOCD_FLASH_BASE=0x08000000
 
 program: $(AHRS)/build/$(PROJECT).bin
