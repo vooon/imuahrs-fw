@@ -492,8 +492,8 @@
                                      PIN_PUPDR_PULLDOWN(GPIOC_PWMI1) |         \
                                      PIN_PUPDR_FLOATING(GPIOC_PWMO5) |         \
                                      PIN_PUPDR_FLOATING(GPIOC_PWMO6) |       \
-                                     PIN_PUPDR_PULLUP(GPIOC_HMC_INT) |         \
-                                     PIN_PUPDR_PULLUP(GPIOC_MPU_INT) |         \
+                                     PIN_PUPDR_FLOATING(GPIOC_HMC_INT) |         \
+                                     PIN_PUPDR_FLOATING(GPIOC_MPU_INT) |         \
                                      PIN_PUPDR_PULLUP(GPIOC_UART4_TX) |       \
                                      PIN_PUPDR_PULLUP(GPIOC_UART4_RX) |        \
                                      PIN_PUPDR_PULLUP(GPIOC_PIN12) |       \
