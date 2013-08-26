@@ -41,6 +41,8 @@ enum led_status {
 	LST_NORMAL
 };
 
+#ifdef LED_PWM
+
 void led_update(enum led_status ls)
 {
 	static bool is_pwm = false;
@@ -75,9 +77,34 @@ void led_update(enum led_status ls)
 	}
 }
 
+#else
+
+void led_update(enum led_status ls)
+{
+	if (ls == LST_FAIL) {
+		LED_FAIL_ON();
+		LED_OFF();
+		LED_NORMAL_OFF();
+	}
+	else if (ls == LST_NORMAL) {
+		LED_TOGGLE();
+		LED_NORMAL_ON();
+		LED_FAIL_OFF();
+	}
+	else { /* INIT */
+		LED_TOGGLE();
+		LED_NORMAL_OFF();
+		LED_FAIL_OFF();
+	}
+}
+
+#endif /* LED_PWM */
+
 /*
  * HW config
  */
+
+#ifdef BOARD_IMU_AHRF
 
 static const PWMConfig pwm1cfg = {
 	1000,
@@ -118,6 +145,80 @@ static const EXTConfig extcfg = {
 		{EXT_CH_MODE_DISABLED, NULL},
 	}
 };
+
+#endif /* BOARD_IMU_AHRF */
+
+#ifdef BOARD_CAPTAIN_PRO2
+
+static const PWMConfig pwm3cfg = {
+	1000000,
+	20000,
+	NULL,
+	{
+		{PWM_OUTPUT_ACTIVE_HIGH, NULL}, /* PWMO5 */
+		{PWM_OUTPUT_ACTIVE_HIGH, NULL}, /* PWMO6 */
+		{PWM_OUTPUT_DISABLED, NULL},
+		{PWM_OUTPUT_DISABLED, NULL}
+	},
+	0
+};
+
+static const PWMConfig pwm4cfg = {
+	1000000,
+	20000,
+	NULL,
+	{
+		{PWM_OUTPUT_DISABLED, NULL},
+		{PWM_OUTPUT_DISABLED, NULL},
+		{PWM_OUTPUT_ACTIVE_HIGH, NULL}, /* PWMO7 */
+		{PWM_OUTPUT_ACTIVE_HIGH, NULL}  /* PWMO8 */
+	},
+	0
+};
+
+static const PWMConfig pwm5cfg = {
+	1000000,
+	20000,
+	NULL,
+	{
+		{PWM_OUTPUT_ACTIVE_HIGH, NULL}, /* PWMO4 */
+		{PWM_OUTPUT_ACTIVE_HIGH, NULL}, /* PWMO3 */
+		{PWM_OUTPUT_ACTIVE_HIGH, NULL}, /* PWMO2 */
+		{PWM_OUTPUT_ACTIVE_HIGH, NULL}, /* PWMO1 */
+	},
+	0
+};
+
+
+
+static const I2CConfig i2c1cfg = {
+	OPMODE_I2C,
+	400000,
+	FAST_DUTY_CYCLE_2
+};
+
+static const EXTConfig extcfg = {
+	{
+		{EXT_CH_MODE_DISABLED, NULL},
+		{EXT_CH_MODE_DISABLED, NULL},
+		{EXT_CH_MODE_DISABLED, NULL},
+		{EXT_CH_MODE_DISABLED, NULL},
+		{EXT_CH_MODE_DISABLED, NULL},
+		{EXT_CH_MODE_DISABLED, NULL},
+		{EXT_CH_MODE_DISABLED, NULL},
+		{EXT_CH_MODE_DISABLED, NULL},
+		{EXT_CH_MODE_RISING_EDGE | EXT_CH_MODE_AUTOSTART | EXT_MODE_GPIOC, hmc5883_exti_handler}, /* PC8 - HMC5883 DRDY */
+		{EXT_CH_MODE_RISING_EDGE | EXT_CH_MODE_AUTOSTART | EXT_MODE_GPIOC, mpu6050_exti_handler}, /* PC9 - MPU6050 IRQ */
+		{EXT_CH_MODE_DISABLED, NULL},
+		{EXT_CH_MODE_DISABLED, NULL},
+		{EXT_CH_MODE_DISABLED, NULL},
+		{EXT_CH_MODE_DISABLED, NULL},
+		{EXT_CH_MODE_DISABLED, NULL},
+		{EXT_CH_MODE_DISABLED, NULL},
+	}
+};
+
+#endif /* BOARD_CAPTAIN_PRO2 */
 
 static const struct mpu6050_cfg mpu6050cfg = {
 	.Fifo_store = MPU6050_FIFO_TEMP_OUT | MPU6050_ACCEL_OUT |
@@ -164,6 +265,7 @@ int main(void)
 	halInit();
 	chSysInit();
 
+#ifdef BOARD_IMU_AHRF
 	/* Clear DRDY pad */
 	palClearPad(GPIOA, GPIOA_DRDY);
 
@@ -180,20 +282,44 @@ int main(void)
 	/* Activate exti */
 	extStart(&EXTD1, &extcfg);
 
+#endif /* BOARD_IMU_AHRF */
+#ifdef BOARD_CAPTAIN_PRO2
+
+	/* Activates serial */
+	sdStart(&SD3, NULL);
+	sdStart(&SD4, NULL);
+
+	/* Activate pwm */
+	pwmStart(&PWMD3, &pwm3cfg);
+	pwmStart(&PWMD4, &pwm4cfg);
+	pwmStart(&PWMD5, &pwm5cfg);
+
+	/* Activate i2c */
+	i2cStart(&I2CD1, &i2c1cfg);
+
+	/* Activate exti */
+	extStart(&EXTD1, &extcfg);
+
+#endif /* BOARD_CAPTAIN_PRO2 */
+
 	/* alert subsys */
 	chEvtInit(&alert_event_source);
 	chEvtRegister(&alert_event_source, &el0, 0);
 
 	/* init devices */
 	pt_init();
+#ifdef BOARD_IMU_AHRF
 	bmp085_init();
+#endif
 	chThdSleepMilliseconds(50); /* power on delay */
 	mpu6050_init(&mpu6050cfg);
 	chThdSleepMilliseconds(250); /* give some time for mpu6050 configuration */
 	hmc5883_init(&hmc5883cfg);
 
+#ifdef BOARD_IMU_AHRF
 	/* Set DRDY pad */
 	palSetPad(GPIOA, GPIOA_DRDY);
+#endif
 
 	while (TRUE) {
 		eventmask_t msk = chEvtWaitOneTimeout(ALL_EVENTS, MS2ST(100));
@@ -210,8 +336,14 @@ int main(void)
 			if (fl & ALERT_FLAG_HMC5883)
 				hmc5883_st = hmc5883_get_status();
 
+#ifdef BOARD_IMU_AHRF
 			if (fl & ALERT_FLAG_BMP085)
 				bmp085_st = bmp085_get_status();
+#endif
+#ifdef BOARD_CAPTAIN_PRO2
+			//if (fl & ALERT_FLAG_BMP085)
+			//	bmp085_st = ms5611_get_status();
+#endif
 
 			pt_set_sens_state(mpu6050_st, hmc5883_st, bmp085_st);
 		}

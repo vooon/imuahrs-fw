@@ -68,4 +68,13 @@ extern void pt_send_mpu_dat(int16_t gx, int16_t gy, int16_t gz, int16_t ax, int1
 extern void pt_send_mag_dat(int16_t mag_x, int16_t mag_y, int16_t mag_z);
 extern void pt_send_bar_dat(int32_t pressure, int16_t temperature);
 
+/* XXX: move to board/config header */
+#ifdef BOARD_IMU_AHRF
+#define PROTO_SD  SD2
+#elif defined(BOARD_CAPTAIN_PRO2)
+#define PROTO_SD  SD4
+#else
+#error "Unknown board"
+#endif
+
 #endif /* PROTOCOL_H */

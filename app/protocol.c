@@ -93,7 +93,7 @@ static msg_t thd_protocol(void *arg UNUSED)
 			pt_send_pkt(ID_HEARTBEAT, NULL, 0);
 		}
 
-		ret = sdGetTimeout(&SD2, SER_TIMEOUT);
+		ret = sdGetTimeout(&PROTO_SD, SER_TIMEOUT);
 		if (ret == Q_TIMEOUT || ret == Q_RESET)
 			continue;
 
@@ -133,7 +133,7 @@ static msg_t thd_protocol(void *arg UNUSED)
 			/* fall through if payload exists */
 
 		case PR_PAYLOAD:
-			ret = sdReadTimeout(&SD2, pkt_payload, pkt_len, SER_PAYLOAD_TIMEOUT);
+			ret = sdReadTimeout(&PROTO_SD, pkt_payload, pkt_len, SER_PAYLOAD_TIMEOUT);
 			if (ret == Q_TIMEOUT || ret == Q_RESET) {
 				rx_state = PR_WAIT_START;
 				ALERT_SET_FAIL(PROTO, protocol_status);
@@ -178,18 +178,18 @@ static msg_t pt_send_pkt(uint8_t msgid, const uint8_t *payload, size_t payload_l
 	chMtxLock(&tx_mutex);
 
 	crc = PIOS_CRC_updateCRC(0, header + 1, sizeof(header) - 1);
-	ret = sdWriteTimeout(&SD2, header, sizeof(header), SER_TIMEOUT);
+	ret = sdWriteTimeout(&PROTO_SD, header, sizeof(header), SER_TIMEOUT);
 	if (ret == Q_TIMEOUT || ret == Q_RESET)
 		goto unlock_ret;
 
 	if (payload_len > 0) {
 		crc = PIOS_CRC_updateCRC(crc, payload, payload_len);
-		ret = sdWriteTimeout(&SD2, payload, payload_len, SER_PAYLOAD_TIMEOUT);
+		ret = sdWriteTimeout(&PROTO_SD, payload, payload_len, SER_PAYLOAD_TIMEOUT);
 		if (ret == Q_TIMEOUT || ret == Q_RESET)
 			goto unlock_ret;
 	}
 
-	ret = sdPutTimeout(&SD2, crc, SER_TIMEOUT);
+	ret = sdPutTimeout(&PROTO_SD, crc, SER_TIMEOUT);
 
 unlock_ret:
 	chMtxUnlock();
