@@ -30,6 +30,7 @@
 #include "alert.h"
 #include "protocol.h"
 #include "task_bmp085.h"
+#include "task_ms5611.h"
 #include "task_mpu6050.h"
 #include "task_hmc5883.h"
 
@@ -82,7 +83,7 @@ void led_update(enum led_status ls)
 void led_update(enum led_status ls)
 {
 	if (ls == LST_FAIL) {
-		LED_FAIL_ON();
+		LED_FAIL_TOGGLE();
 		LED_OFF();
 		LED_NORMAL_OFF();
 	}
@@ -243,6 +244,10 @@ static const struct hmc5883_cfg hmc5883cfg = {
 
 };
 
+static const struct ms5611_cfg ms5611cfg = {
+	.oversampling = MS5611_OSR_4096
+};
+
 /*
  * Application entry point.
  */
@@ -311,6 +316,9 @@ int main(void)
 #ifdef BOARD_IMU_AHRF
 	bmp085_init();
 #endif
+#ifdef BOARD_CAPTAIN_PRO2
+	ms5611_init(&ms5611cfg);
+#endif
 	chThdSleepMilliseconds(50); /* power on delay */
 	mpu6050_init(&mpu6050cfg);
 	chThdSleepMilliseconds(250); /* give some time for mpu6050 configuration */
@@ -341,8 +349,8 @@ int main(void)
 				bmp085_st = bmp085_get_status();
 #endif
 #ifdef BOARD_CAPTAIN_PRO2
-			//if (fl & ALERT_FLAG_BMP085)
-			//	bmp085_st = ms5611_get_status();
+			if (fl & ALERT_FLAG_BMP085)
+				bmp085_st = ms5611_get_status();
 #endif
 
 			pt_set_sens_state(mpu6050_st, hmc5883_st, bmp085_st);
