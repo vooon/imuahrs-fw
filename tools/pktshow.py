@@ -71,6 +71,9 @@ def main():
     parser.add_argument("device", help="com port device file")
     parser.add_argument("baudrate", help="com port baudrate", type=int, nargs='?', default=230400)
 
+    parser.add_argument("-q", dest="dont_listen", action="store_true", default=False,
+                        help="do not listen device, quit immidiatly after send")
+
     parser.add_argument("+mpu", dest="mpu_en", action="store_true", default=None,
                         help="enable mpu_dat messages")
     parser.add_argument("-mpu", dest="mpu_en", action="store_false", default=None,
@@ -88,6 +91,9 @@ def main():
 
     parser.add_argument("+mpucfg", dest="mpu_cfg", default=None, type=anyint, nargs=3,
                         help="send mpu_cfg message (default: 0x18 0x10 0x00)")
+
+    parser.add_argument("+servo", dest="servo", default=None, type=anyint, nargs=2,
+                        help="send servo_set message (default: 0 1500)")
 
     args = parser.parse_args();
 
@@ -116,6 +122,15 @@ def main():
         mcf.accel_scale = args.mpu_cfg[1]
         mcf.filter_scale = args.mpu_cfg[2]
         reader.send(mcf)
+
+    if args.servo is not None:
+        serv = ipr.Pt_ServoSet()
+        serv.channel = args.servo[0]
+        serv.pulse = args.servo[1]
+        reader.send(serv)
+
+    if args.dont_listen:
+        return
 
     while True:
         kq.join()

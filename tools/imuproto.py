@@ -112,6 +112,18 @@ class Pt_Heartbeat(PacketBase):
         return "<Pt_Heartbeat: ({} ms)>".format(self.time)
 
 
+class Pt_ServoSet(PacketBase):
+    msgid = 0x03
+    channel = 0
+    pulse = 1500
+
+    def serialize_payload(self):
+        return bytearray(struct.pack("<BH", self.channel, self.pulse))
+
+    def __repr__(self):
+        return "<Pt_servoSet: ({} ms)>".format(self.time)
+
+
 class Pt_MesgEn(PacketBase):
     msgid = 0xc0
     mpu_dat_en = False
@@ -224,6 +236,7 @@ PKT_TYPES = {
     0x00: Pt_Version,
     0x01: Pt_SensTest,
     0x02: Pt_Heartbeat,
+    0x03: Pt_ServoSet,
     0xc0: Pt_MesgEn,
     0xc1: Pt_MpuCfg,
     0xc2: Pt_HmcCfg,
