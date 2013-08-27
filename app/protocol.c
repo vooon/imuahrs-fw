@@ -47,6 +47,7 @@ static volatile uint8_t sens_test_state;
 static volatile bool allow_mpu_dat;
 static volatile bool allow_mag_dat;
 static volatile bool allow_bar_dat;
+static volatile bool allow_trm_dat;
 
 enum proto_rx_state {
 	PR_WAIT_START = 0,
@@ -237,6 +238,7 @@ void pt_process_pkt(uint8_t msgid, uint16_t time UNUSED, const uint8_t *payload,
 		allow_mpu_dat = payload[0] & 0x01;
 		allow_mag_dat = payload[0] & 0x02;
 		allow_bar_dat = payload[0] & 0x04;
+		allow_trm_dat = payload[0] & 0x08;
 
 		if (!allow_mpu_dat && !allow_mag_dat && !allow_bar_dat) {
 			evtStart(&heartbeat_et);
@@ -343,3 +345,16 @@ void pt_send_bar_dat(int32_t pressure, int16_t temperature)
 	}
 }
 
+void pt_send_trm_dat(int16_t temperature)
+{
+	msg_t ret;
+	struct pt_trm_dat data = { .temperature = temperature };
+
+	if (!allow_trm_dat)
+		return;
+
+	ret = pt_send_pkt(ID_TRM_DAT, (uint8_t *)&data, sizeof(data));
+	if (ret == Q_TIMEOUT || ret == Q_RESET) {
+		ALERT_SET_FAIL(PROTO, protocol_status);
+	}
+}

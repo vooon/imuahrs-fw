@@ -35,6 +35,7 @@
 #include "task_mpu6050.h"
 #include "task_hmc5883.h"
 #include "task_servopwm.h"
+#include "task_ntc10k.h"
 
 EVENTSOURCE_DECL(alert_event_source);
 
@@ -330,6 +331,9 @@ int main(void)
 	/* Activate exti */
 	extStart(&EXTD1, &extcfg);
 
+	/* Activate adc */
+	adcStart(&ADCD1, NULL);
+
 #endif /* BOARD_CAPTAIN_PRO2 */
 
 	/* alert subsys */
@@ -338,11 +342,14 @@ int main(void)
 
 	/* init devices */
 	pt_init();
+	chThdSleepMilliseconds(10); /* power on delay */
 #ifdef HAS_DEV_BMP085
 	bmp085_init();
+	chThdSleepMilliseconds(50); /* init delay */
 #endif
 #ifdef HAS_DEV_MS5611
 	ms5611_init(&ms5611cfg);
+	chThdSleepMilliseconds(50); /* init delay */
 #endif
 #ifdef HAS_DEV_MPU6050
 	mpu6050_init(&mpu6050cfg);
@@ -353,6 +360,9 @@ int main(void)
 #endif
 #ifdef HAS_DEV_SERVOPWM
 	servopwm_init(&servopwmcfg);
+#endif
+#ifdef HAS_DEV_NTC10K
+	ntc10k_init();
 #endif
 
 #ifdef BOARD_IMU_AHRF

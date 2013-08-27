@@ -38,7 +38,8 @@ enum pt_msgid {
 	ID_BMP_CFG = 0xc3,
 	ID_MPU_DAT = 0xd0,
 	ID_MAG_DAT = 0xd1,
-	ID_BAR_DAT = 0xd2
+	ID_BAR_DAT = 0xd2,
+	ID_TRM_DAT = 0xd3
 };
 
 struct pt_mpu_dat {
@@ -67,6 +68,9 @@ struct pt_servo_set {
 	uint16_t pulse;
 } PACK_STRUCT_STRUCT;
 
+struct pt_trm_dat {
+	int16_t temperature;
+} PACK_STRUCT_STRUCT;
 
 extern void pt_init(void); /* start main receiver thread */
 extern alert_status_t pt_get_status(void);
@@ -75,5 +79,6 @@ extern void pt_set_sens_state(alert_status_t mpu, alert_status_t hmc, alert_stat
 extern void pt_send_mpu_dat(int16_t gx, int16_t gy, int16_t gz, int16_t ax, int16_t ay, int16_t az, int16_t temp);
 extern void pt_send_mag_dat(int16_t mag_x, int16_t mag_y, int16_t mag_z);
 extern void pt_send_bar_dat(int32_t pressure, int16_t temperature);
+extern void pt_send_trm_dat(int16_t temperature);
 
 #endif /* PROTOCOL_H */

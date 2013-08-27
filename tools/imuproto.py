@@ -129,6 +129,7 @@ class Pt_MesgEn(PacketBase):
     mpu_dat_en = False
     mag_dat_en = False
     bar_dat_en = False
+    trm_dat_en = False
 
     def serialize_payload(self):
         b = 0
@@ -138,11 +139,13 @@ class Pt_MesgEn(PacketBase):
             b |= 0x02
         if self.bar_dat_en:
             b |= 0x04
+        if self.trm_dat_en:
+            b |= 0x08
         return bytearray((b, ))
 
     def __repr__(self):
-        return "<Pt_MesgEn: ({} ms) mpu_dat_en={} mag_dat_en={} bar_dat_en={}>".format(
-            self.time, self.mpu_dat_en, self.mag_dat_en, self.bar_dat_en)
+        return "<Pt_MesgEn: ({} ms) mpu_dat_en={} mag_dat_en={} bar_dat_en={} trm_dat_en={}>".format(
+            self.time, self.mpu_dat_en, self.mag_dat_en, self.bar_dat_en, self.trm_dat_en)
 
 
 class Pt_MpuCfg(PacketBase):
@@ -232,6 +235,22 @@ class Pt_BarDat(PacketBase):
             self.time, self.pressure, self.temperature)
 
 
+class Pt_TrmDat(PacketBase):
+    msgid = 0xd3
+
+    temperature = 0
+
+    def deserialize_payload(self, buf):
+        if len(buf) != 2:
+            raise DesError
+
+        self.temperature, = struct.unpack('<h', buf)
+
+    def __repr__(self):
+        return "<Pt_TrmDat: ({} ms) temperature={}>".format(
+            self.time, self.temperature)
+
+
 PKT_TYPES = {
     0x00: Pt_Version,
     0x01: Pt_SensTest,
@@ -244,6 +263,7 @@ PKT_TYPES = {
     0xd0: Pt_MpuDat,
     0xd1: Pt_MagDat,
     0xd2: Pt_BarDat,
+    0xd3: Pt_TrmDat,
 }
 
 
