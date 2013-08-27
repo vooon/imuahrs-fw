@@ -34,6 +34,7 @@
 #include "task_ms5611.h"
 #include "task_mpu6050.h"
 #include "task_hmc5883.h"
+#include "task_servopwm.h"
 
 EVENTSOURCE_DECL(alert_event_source);
 
@@ -162,7 +163,7 @@ static const PWMConfig pwm3cfg = {
 		{PWM_OUTPUT_DISABLED, NULL},
 		{PWM_OUTPUT_DISABLED, NULL}
 	},
-	0
+	0, 0
 };
 
 static const PWMConfig pwm4cfg = {
@@ -175,7 +176,7 @@ static const PWMConfig pwm4cfg = {
 		{PWM_OUTPUT_ACTIVE_HIGH, NULL}, /* PWMO7 */
 		{PWM_OUTPUT_ACTIVE_HIGH, NULL}  /* PWMO8 */
 	},
-	0
+	0, 0
 };
 
 static const PWMConfig pwm5cfg = {
@@ -188,10 +189,8 @@ static const PWMConfig pwm5cfg = {
 		{PWM_OUTPUT_ACTIVE_HIGH, NULL}, /* PWMO2 */
 		{PWM_OUTPUT_ACTIVE_HIGH, NULL}, /* PWMO1 */
 	},
-	0
+	0, 0
 };
-
-
 
 static const I2CConfig i2c1cfg = {
 	OPMODE_I2C,
@@ -225,6 +224,24 @@ static const EXTConfig extcfg = {
 		{EXT_CH_MODE_DISABLED, NULL},
 		{EXT_CH_MODE_DISABLED, NULL},
 	}
+};
+
+static const struct servopwm_channel servo_channels[] = {
+	{ &PWMD5, 3 },
+	{ &PWMD5, 2 },
+	{ &PWMD5, 1 },
+	{ &PWMD5, 0 },
+	{ &PWMD3, 0 },
+	{ &PWMD3, 1 },
+	{ &PWMD4, 2 },
+	{ &PWMD4, 3 },
+};
+
+static const struct servopwm_cfg servopwmcfg = {
+	.channels = servo_channels,
+	.channels_count = 8,
+	.pulse_min = 800,
+	.pulse_max = 2500,
 };
 
 #endif /* BOARD_CAPTAIN_PRO2 */
@@ -333,6 +350,9 @@ int main(void)
 #endif
 #ifdef HAS_DEV_HMC5883
 	hmc5883_init(&hmc5883cfg);
+#endif
+#ifdef HAS_DEV_SERVOPWM
+	servopwm_init(&servopwmcfg);
 #endif
 
 #ifdef BOARD_IMU_AHRF

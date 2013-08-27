@@ -22,12 +22,15 @@
 
 #include "ch.h"
 #include "evtimer.h"
+#include <string.h>
+
 #include "protocol.h"
 #include "pios_crc.h" /* use crc functions from OpenPilot */
 
 #include "task_bmp085.h"
 #include "task_hmc5883.h"
 #include "task_mpu6050.h"
+#include "task_servopwm.h"
 
 /* Thread */
 static WORKING_AREA(wa_protocol, 1024);
@@ -208,6 +211,22 @@ void pt_process_pkt(uint8_t msgid, uint16_t time UNUSED, const uint8_t *payload,
 	case ID_SENS_TEST:
 		ret = pt_send_pkt(msgid, (const uint8_t *)&sens_test_state, sizeof(sens_test_state));
 		break;
+
+#ifdef HAS_DEV_SERVOPWM
+	case ID_SERVO_SET:
+		if (payload_len % sizeof(struct pt_servo_set)) {
+			ret = Q_RESET;
+			break;
+		}
+
+		for (size_t i = 0; i < payload_len; i += sizeof(struct pt_servo_set)) {
+			struct pt_servo_set servo_set;
+			memcpy(&servo_set, payload, sizeof(servo_set));
+			servopwm_set_channel(servo_set.channel, servo_set.pulse);
+		}
+
+		break;
+#endif
 
 	case ID_MESG_EN:
 		if (payload_len != 1) {

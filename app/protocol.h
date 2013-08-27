@@ -31,6 +31,7 @@ enum pt_msgid {
 	ID_VERSION = 0x00,
 	ID_SENS_TEST = 0x01,
 	ID_HEARTBEAT = 0x02,
+	ID_SERVO_SET = 0x03,
 	ID_MESG_EN = 0xc0,
 	ID_MPU_CFG = 0xc1,
 	ID_HMC_CFG = 0xc2,
@@ -59,6 +60,11 @@ struct pt_mag_dat {
 struct pt_bar_dat {
 	int32_t pressure;
 	int16_t temperature;
+} PACK_STRUCT_STRUCT;
+
+struct pt_servo_set {
+	uint8_t channel;
+	uint16_t pulse;
 } PACK_STRUCT_STRUCT;
 
 
