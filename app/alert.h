@@ -26,6 +26,7 @@
 #include "ch.h"
 #include "hal.h"
 
+#include "app_config.h"
 
 typedef enum {
 	ALST_INIT = 0,
@@ -61,7 +62,7 @@ do {											\
 
 
 #include "chprintf.h"
-#define debug(...)	chprintf(&SD2, ##__VA_ARGS__)
+#define debug(...)	chprintf((BaseSequentialStream *)&SHELL_SD, ##__VA_ARGS__)
 
 #define UNUSED		__attribute__((unused))
 

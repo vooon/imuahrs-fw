@@ -26,6 +26,7 @@
 #include "ch.h"
 #include "hal.h"
 
+#include "app_config.h"
 #include "led.h"
 #include "alert.h"
 #include "protocol.h"
@@ -320,16 +321,19 @@ int main(void)
 
 	/* init devices */
 	pt_init();
-#ifdef BOARD_IMU_AHRF
+#ifdef HAS_DEV_BMP085
 	bmp085_init();
 #endif
-#ifdef BOARD_CAPTAIN_PRO2
+#ifdef HAS_DEV_MS5611
 	ms5611_init(&ms5611cfg);
 #endif
-	chThdSleepMilliseconds(50); /* power on delay */
+#ifdef HAS_DEV_MPU6050
 	mpu6050_init(&mpu6050cfg);
 	chThdSleepMilliseconds(250); /* give some time for mpu6050 configuration */
+#endif
+#ifdef HAS_DEV_HMC5883
 	hmc5883_init(&hmc5883cfg);
+#endif
 
 #ifdef BOARD_IMU_AHRF
 	/* Set DRDY pad */
@@ -345,17 +349,22 @@ int main(void)
 			if (fl & ALERT_FLAG_PROTO)
 				proto_st = pt_get_status();
 
+#ifdef HAS_DEV_MPU6050
 			if (fl & ALERT_FLAG_MPU6050)
 				mpu6050_st = mpu6050_get_status();
+#endif
 
+#ifdef HAS_DEV_HMC5883
 			if (fl & ALERT_FLAG_HMC5883)
 				hmc5883_st = hmc5883_get_status();
+#endif
 
-#ifdef BOARD_IMU_AHRF
+#ifdef HAS_DEV_BMP085
 			if (fl & ALERT_FLAG_BMP085)
 				bmp085_st = bmp085_get_status();
 #endif
-#ifdef BOARD_CAPTAIN_PRO2
+
+#ifdef HAS_DEV_MS5611
 			if (fl & ALERT_FLAG_BMP085)
 				bmp085_st = ms5611_get_status();
 #endif
