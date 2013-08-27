@@ -313,10 +313,10 @@
                                      PIN_ODR_HIGH(GPIOA_SWDIO) |            \
                                      PIN_ODR_HIGH(GPIOA_SWCLK) |            \
                                      PIN_ODR_HIGH(GPIOA_PIN15))
-#define VAL_GPIOA_AFRL              (PIN_AFIO_AF(GPIOA_PWMO4, 8) |         \
-                                     PIN_AFIO_AF(GPIOA_PWMO3, 8) |           \
-                                     PIN_AFIO_AF(GPIOA_PWMO2, 8) |           \
-                                     PIN_AFIO_AF(GPIOA_PWMO1, 8) |           \
+#define VAL_GPIOA_AFRL              (PIN_AFIO_AF(GPIOA_PWMO4, 2) |         \
+                                     PIN_AFIO_AF(GPIOA_PWMO3, 2) |           \
+                                     PIN_AFIO_AF(GPIOA_PWMO2, 2) |           \
+                                     PIN_AFIO_AF(GPIOA_PWMO1, 2) |           \
                                      PIN_AFIO_AF(GPIOA_PIN4, 0) |           \
                                      PIN_AFIO_AF(GPIOA_PIN5, 0) |            \
                                      PIN_AFIO_AF(GPIOA_PIN6, 0) |            \
