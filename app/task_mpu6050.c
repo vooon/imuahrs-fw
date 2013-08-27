@@ -212,6 +212,7 @@ static msg_t mpu6050_config(struct mpu6050_cfg const *cfg)
 	return RDY_OK;
 }
 
+#ifdef MPU6050_USE_FIFO
 static msg_t mpu6050_get_fifo_depth(void)
 {
 	msg_t ret;
@@ -223,6 +224,7 @@ static msg_t mpu6050_get_fifo_depth(void)
 
 	return data[0] << 8 | data[1];
 }
+#endif /* MPU6050_USE_FIFO */
 
 /**
  * @brief Initialize the MPU6000 3-axis gyro sensor thread
@@ -268,10 +270,15 @@ static msg_t thd_mpu6050(void *arg UNUSED)
 		eventmask_t mask = chEvtWaitOneTimeout(ALL_EVENTS, EVT_TIMEOUT);
 
 		if (!(mask & IRQ_EVTMASK)) {
-			ALERT_SET_FAIL(MPU6050, sensor_status);
-			continue;
+			if (!mpu6050_probe(dev.addr)) {
+				ALERT_SET_FAIL(MPU6050, sensor_status);
+				continue;
+			}
+			/* Regular INT not present, but sensor seems ok.
+			 * Read current state. */
 		}
 
+#ifdef MPU6050_USE_FIFO
 		ret = mpu6050_get_fifo_depth();
 		if (ret < 0) {
 			ALERT_SET_FAIL(MPU6050, sensor_status);
@@ -296,6 +303,13 @@ static msg_t thd_mpu6050(void *arg UNUSED)
 				continue;
 			}
 		}
+#else
+		ret = mpu6050_reg_readm(MPU6050_ACCEL_X_OUT_MSB, databuf, sizeof(databuf));
+		if (ret != I2CD_NO_ERROR)  {
+			ALERT_SET_FAIL(MPU6050, sensor_status);
+			continue;
+		}
+#endif /* MPU6050_USE_FIFO */
 
 		// Rotate the sensor to OP convention.  The datasheet defines X as towards the right
 		// and Y as forward.  OP convention transposes this.  Also the Z is defined negatively

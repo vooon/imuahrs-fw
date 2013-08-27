@@ -216,6 +216,13 @@ static const EXTConfig extcfg = {
 		{EXT_CH_MODE_DISABLED, NULL},
 		{EXT_CH_MODE_DISABLED, NULL},
 		{EXT_CH_MODE_DISABLED, NULL},
+		{EXT_CH_MODE_DISABLED, NULL},
+		{EXT_CH_MODE_DISABLED, NULL},
+		{EXT_CH_MODE_DISABLED, NULL},
+		{EXT_CH_MODE_DISABLED, NULL},
+		{EXT_CH_MODE_DISABLED, NULL},
+		{EXT_CH_MODE_DISABLED, NULL},
+		{EXT_CH_MODE_DISABLED, NULL},
 	}
 };
 
@@ -228,7 +235,7 @@ static const struct mpu6050_cfg mpu6050cfg = {
 	.Smpl_rate_div_dlp = 1,     /* with dlp on output rate is 500 Hz */
 	.interrupt_cfg = MPU6050_INT_CLR_ANYRD | MPU6050_INT_I2C_BAYPASS_EN,
 	.interrupt_en = MPU6050_INTEN_DATA_RDY,
-	.User_ctl = MPU6050_USERCTL_FIFO_EN,
+	.User_ctl = /*MPU6050_USERCTL_FIFO_EN*/ 0,
 	.Pwr_mgmt_clk = MPU6050_PWRMGMT_PLL_X_CLK,
 	.accel_range = MPU6050_ACCEL_8G,
 	.gyro_range = MPU6050_SCALE_2000_DEG,
