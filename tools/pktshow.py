@@ -90,9 +90,14 @@ def main():
                         help="disable bar_dat messages")
 
     parser.add_argument("+trm", dest="trm_en", action="store_true", default=None,
-                        help="enable bar_dat messages")
+                        help="enable trm_dat messages")
     parser.add_argument("-trm", dest="trm_en", action="store_false", default=None,
                         help="disable trm_dat messages")
+
+    parser.add_argument("+rpm", dest="rpm_en", action="store_true", default=None,
+                        help="enable rpm_dat messages")
+    parser.add_argument("-rpm", dest="rpm_en", action="store_false", default=None,
+                        help="disable rpm_dat messages")
 
     parser.add_argument("+mpucfg", dest="mpu_cfg", default=None, type=anyint, nargs=3,
                         help="send mpu_cfg message (default: 0x18 0x10 0x00)")
@@ -115,12 +120,14 @@ def main():
     reader.send(st)
 
     if args.mpu_en is not None or args.mag_en is not None \
-       or args.bar_en is not None or args.trm_en is not None:
+       or args.bar_en is not None or args.trm_en is not None \
+       or args.rpm_en is not None:
         me = ipr.Pt_MesgEn()
         me.mpu_dat_en = args.mpu_en or False
         me.mag_dat_en = args.mag_en or False
         me.bar_dat_en = args.bar_en or False
         me.trm_dat_en = args.trm_en or False
+        me.rpm_dat_en = args.rpm_en or False
         reader.send(me)
 
     if args.mpu_cfg is not None:

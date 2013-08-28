@@ -121,7 +121,18 @@ class Pt_ServoSet(PacketBase):
         return bytearray(struct.pack("<BH", self.channel, self.pulse))
 
     def __repr__(self):
-        return "<Pt_servoSet: ({} ms)>".format(self.time)
+        return "<Pt_ServoSet: ({} ms)>".format(self.time)
+
+
+class Pt_EngineStop(PacketBase):
+    msgid = 0x04
+    stop = True
+
+    def serialize_payload(self):
+        return bytearray(struct.pack("<B", self.stop))
+
+    def __repr__(self):
+        return "<Pt_EngineStop: ({} ms) stop={}>".format(self.time, self.stop)
 
 
 class Pt_MesgEn(PacketBase):
@@ -130,6 +141,7 @@ class Pt_MesgEn(PacketBase):
     mag_dat_en = False
     bar_dat_en = False
     trm_dat_en = False
+    rpm_dat_en = False
 
     def serialize_payload(self):
         b = 0
@@ -141,11 +153,14 @@ class Pt_MesgEn(PacketBase):
             b |= 0x04
         if self.trm_dat_en:
             b |= 0x08
+        if self.rpm_dat_en:
+            b |= 0x10
         return bytearray((b, ))
 
     def __repr__(self):
-        return "<Pt_MesgEn: ({} ms) mpu_dat_en={} mag_dat_en={} bar_dat_en={} trm_dat_en={}>".format(
-            self.time, self.mpu_dat_en, self.mag_dat_en, self.bar_dat_en, self.trm_dat_en)
+        return "<Pt_MesgEn: ({} ms) mpu_dat_en={} mag_dat_en={} bar_dat_en={} trm_dat_en={} rpm_dat_en={}>".format(
+            self.time, self.mpu_dat_en, self.mag_dat_en, self.bar_dat_en,
+            self.trm_dat_en, self.rpm_dat_en)
 
 
 class Pt_MpuCfg(PacketBase):
@@ -251,11 +266,29 @@ class Pt_TrmDat(PacketBase):
             self.time, self.temperature)
 
 
+class Pt_RpmDat(PacketBase):
+    msgid = 0xd4
+
+    rpm = 0
+
+    def deserialize_payload(self, buf):
+        if len(buf) != 2:
+            raise DesError
+
+        self.rpm, = struct.unpack('<h', buf)
+
+    def __repr__(self):
+        return "<Pt_RpmDat: ({} ms) rpm={}>".format(
+            self.time, self.rpm)
+
+
+
 PKT_TYPES = {
     0x00: Pt_Version,
     0x01: Pt_SensTest,
     0x02: Pt_Heartbeat,
     0x03: Pt_ServoSet,
+    0x04: Pt_EngineStop,
     0xc0: Pt_MesgEn,
     0xc1: Pt_MpuCfg,
     0xc2: Pt_HmcCfg,
@@ -264,6 +297,7 @@ PKT_TYPES = {
     0xd1: Pt_MagDat,
     0xd2: Pt_BarDat,
     0xd3: Pt_TrmDat,
+    0xd4: Pt_RpmDat,
 }
 
 
