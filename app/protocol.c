@@ -31,6 +31,7 @@
 #include "task_hmc5883.h"
 #include "task_mpu6050.h"
 #include "task_servopwm.h"
+#include "task_rpm.h"
 
 /* Thread */
 static WORKING_AREA(wa_protocol, 1024);
@@ -48,6 +49,7 @@ static volatile bool allow_mpu_dat;
 static volatile bool allow_mag_dat;
 static volatile bool allow_bar_dat;
 static volatile bool allow_trm_dat;
+static volatile bool allow_rpm_dat;
 
 enum proto_rx_state {
 	PR_WAIT_START = 0,
@@ -229,6 +231,12 @@ void pt_process_pkt(uint8_t msgid, uint16_t time UNUSED, const uint8_t *payload,
 		break;
 #endif
 
+#ifdef HAS_DEV_RPM
+	case ID_ENGINE_STOP:
+		rpm_stop_engine(payload[0]);
+		break;
+#endif
+
 	case ID_MESG_EN:
 		if (payload_len != 1) {
 			ret = Q_RESET;
@@ -239,6 +247,7 @@ void pt_process_pkt(uint8_t msgid, uint16_t time UNUSED, const uint8_t *payload,
 		allow_mag_dat = payload[0] & 0x02;
 		allow_bar_dat = payload[0] & 0x04;
 		allow_trm_dat = payload[0] & 0x08;
+		allow_rpm_dat = payload[0] & 0x10;
 
 		if (!allow_mpu_dat && !allow_mag_dat && !allow_bar_dat) {
 			evtStart(&heartbeat_et);
@@ -354,6 +363,20 @@ void pt_send_trm_dat(int16_t temperature)
 		return;
 
 	ret = pt_send_pkt(ID_TRM_DAT, (uint8_t *)&data, sizeof(data));
+	if (ret == Q_TIMEOUT || ret == Q_RESET) {
+		ALERT_SET_FAIL(PROTO, protocol_status);
+	}
+}
+
+void pt_send_rpm_dat(int16_t rpm)
+{
+	msg_t ret;
+	struct pt_rpm_dat data = { .rpm = rpm };
+
+	if (!allow_rpm_dat)
+		return;
+
+	ret = pt_send_pkt(ID_RPM_DAT, (uint8_t *)&data, sizeof(data));
 	if (ret == Q_TIMEOUT || ret == Q_RESET) {
 		ALERT_SET_FAIL(PROTO, protocol_status);
 	}

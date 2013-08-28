@@ -5,6 +5,7 @@ APPSRC = ${AHRS}/app/main.c \
 	 ${AHRS}/app/task_hmc5883.c \
 	 ${AHRS}/app/task_servopwm.c \
 	 ${AHRS}/app/task_ntc10k.c \
+	 ${AHRS}/app/task_rpm.c \
 	 ${AHRS}/app/protocol.c \
 	 ${AHRS}/app/pios_crc.c
 

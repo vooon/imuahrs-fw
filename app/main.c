@@ -36,6 +36,7 @@
 #include "task_hmc5883.h"
 #include "task_servopwm.h"
 #include "task_ntc10k.h"
+#include "task_rpm.h"
 
 EVENTSOURCE_DECL(alert_event_source);
 
@@ -205,7 +206,8 @@ static const EXTConfig extcfg = {
 		{EXT_CH_MODE_DISABLED, NULL},
 		{EXT_CH_MODE_DISABLED, NULL},
 		{EXT_CH_MODE_DISABLED, NULL},
-		{EXT_CH_MODE_DISABLED, NULL},
+		//{EXT_CH_MODE_DISABLED, NULL}, // PC4
+		{EXT_CH_MODE_RISING_EDGE | EXT_CH_MODE_AUTOSTART | EXT_MODE_GPIOC, rpm_exti_handler}, /* PC4 - RPM IN */
 		{EXT_CH_MODE_DISABLED, NULL},
 		{EXT_CH_MODE_DISABLED, NULL},
 		{EXT_CH_MODE_DISABLED, NULL},
@@ -363,6 +365,9 @@ int main(void)
 #endif
 #ifdef HAS_DEV_NTC10K
 	ntc10k_init();
+#endif
+#ifdef HAS_DEV_RPM
+	rpm_init();
 #endif
 
 #ifdef BOARD_IMU_AHRF

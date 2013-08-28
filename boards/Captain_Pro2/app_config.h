@@ -6,11 +6,15 @@
 #define HAS_DEV_MS5611
 #define HAS_DEV_SERVOPWM
 #define HAS_DEV_NTC10K
+#define HAS_DEV_RPM
 
 #define PROTO_SD SD4
 #define SHELL_SD SD3
 
 #define NTC10K_GPIO GPIOC
 #define NTC10K_PIN  5
+
+#define RPM_GPIO GPIOC
+#define RPM_PIN  4
 
 #endif /* _APP_CONFIG_H_ */
