@@ -7,6 +7,7 @@ import argparse
 import web
 import web.template
 from webreader import current_data
+from rrdlog import RRDEngineLog
 
 try:
     import cjson as json
@@ -127,6 +128,9 @@ def main():
 
     current_data.set_reader(reader)
     current_data.start()
+
+    log = RRDEngineLog()
+    log.start()
 
     # hack
     app = web.application(urls, globals())

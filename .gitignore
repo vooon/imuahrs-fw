@@ -5,3 +5,4 @@ build/
 *.s#?
 *.l#?
 *.pyc
+tools/static/log/

@@ -1,5 +1,5 @@
 # -*- python -*-
-# vim:ser ts=4 sw=4 et:
+# vim:set ts=4 sw=4 et:
 
 import web
 import imuproto
@@ -9,7 +9,7 @@ import threading
 class CurrentDataThread(threading.Thread):
 
     def __init__(self):
-        threading.Thread.__init__(self, name='imu data logger')
+        threading.Thread.__init__(self, name='imu data storage')
         self.daemon = True
         self._lock = threading.Lock()
         self._terminate = threading.Event()
