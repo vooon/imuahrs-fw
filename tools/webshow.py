@@ -14,9 +14,10 @@ except:
     import json
 
 urls = (
-    '/api/get/(rpy|bar|trm|all)', 'JsonGetCurrent',
+    '/api/get/(rpm|bar|trm|all)', 'JsonGetCurrent',
     '/api/set/servo', 'JsonSetServo',
     '/api/set/engine-stop', 'JsonSetStop',
+    '/api/set/engine-release', 'JsonSetRelease',
     '/', 'Index',
 )
 
@@ -30,8 +31,8 @@ class Index(object):
 
 class JsonGetCurrent(object):
     def GET(self, element):
-        if element == 'rpy':
-            return json.dumps({'rpy': current_data.rpy_dat})
+        if element == 'rpm':
+            return json.dumps({'rpm': current_data.rpm_dat})
         elif element == 'bar':
             return json.dumps({'bar': current_data.bar_dat})
         elif element == 'trm':
@@ -88,12 +89,28 @@ class JsonSetStop(object):
     def POST(self):
         i = web.input()
         if i.has_key('secret') and i['secret'] == 'emergency':
-                #current_data.engine_stop()
+                current_data.stop_engine()
                 pass
         else:
             return json.dumps({'error': 'unknown input', 'post_data': repr(i)})
 
         return json.dumps({'engine-stop': 'ok'})
+
+
+class JsonSetRelease(object):
+    def GET(self):
+        return json.dumps({'error': 'use POST here secret=release'})
+
+    def POST(self):
+        i = web.input()
+        if i.has_key('secret') and i['secret'] == 'release':
+                current_data.stop_engine(False)
+                pass
+        else:
+            return json.dumps({'error': 'unknown input', 'post_data': repr(i)})
+
+        return json.dumps({'engine-release': 'ok'})
+
 
 
 

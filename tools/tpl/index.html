@@ -18,10 +18,19 @@ $def with (info)
 		function update_state(all) {
 			console.log(all)
 
-			$$('#status-rpy').text(all['rpy'])
+			$$('#status-rpm').text(all['rpm'])
 			$$('#status-trm').text(all['trm'])
 			$$('#status-bar-pressure').text(all['bar']['pressure'])
 			$$('#status-bar-temperature').text(all['bar']['temperature'])
+
+			if (all['engine_blocked']) {
+				$$('#engine-blocked').css({ display: 'block'})
+				$$('#engine-released').css({ display: 'none'})
+			}
+			else {
+				$$('#engine-blocked').css({ display: 'none'})
+				$$('#engine-released').css({ display: 'block'})
+			}
 		}
 
 		function poll_getall() {
@@ -53,6 +62,16 @@ $def with (info)
 				})
 			})
 
+			$$("#engine-release").button({
+				icons: { primary: 'ui-icon-key' },
+			})
+			$$("#engine-release").click(function(event) {
+				console.log(event)
+				$$.post('/api/set/engine-release', {
+					'secret': 'release'
+				})
+			})
+
 			poll_getall()
 		});
 	</script>
@@ -60,33 +79,52 @@ $def with (info)
 <body>
 	<h1>Captain Pro<sub>2</sub></h1>
 
-	<h2>Board information</h2>
-	<ul id="info">
-		<li>Firmware: <i>$:info['version']</i></li>
-		<li>Sensor test status:
-			<ul id="sensor_status">
-			$for k, v in info['sens_test'].iteritems():
-				<li>$k: <i>
-				$if v: OK
-				$else: FAIL
-				</i></li>
-			</ul>
-		</li>
-	</ul>
+	<div class="ui-widget">
+		<h2>Board information</h2>
+		<ul id="info">
+			<li>Firmware: <strong>$:info['version']</strong></li>
+			<li>Sensor test status:
+				<ul id="sensor_status">
+				$for k, v in info['sens_test'].iteritems():
+					<li>$k: <strong>
+					$if v: OK
+					$else: FAIL
+					</strong></li>
+				</ul>
+			</li>
+		</ul>
+	</div>
 
-	<h2>Sensor status</h2>
-	<ul id="status">
-		<li>Motor RPY: <span id="status-rpy">$:info['rpy']</span></li>
-		<li>Motor temperature: <span id="status-trm">$:info['trm']</span> °C</li>
-		<li>Pressure: <span id="status-bar-pressure">$:info['bar']['pressure']</span> Pa</li>
-		<li>Baro temperature: <span id="status-bar-temperature">$:info['bar']['temperature']</span> °C</li>
-	</ul>
+	<div class="ui-widget">
+		<h2>Status</h2>
+		<ul id="status">
+			<li>Motor RPM: <strong id="status-rpm">$:info['rpm']</strong></li>
+			<li>Motor temperature: <strong id="status-trm">$:info['trm']</strong> °C</li>
+			<li>Pressure: <strong id="status-bar-pressure">$:info['bar']['pressure']</strong> kPa</li>
+			<li>Baro temperature: <strong id="status-bar-temperature">$:info['bar']['temperature']</strong> °C</li>
+		</ul>
+	</div>
 
-	<h2>Servo control</h2>
-	<ul id="servo-sliders">
-	$for i in range(8):
-		<li>Servo $i: <div id="slider_$i"></div></li>
-	</ul>
-	<button id="engine-stop">Emergency stop engine</button>
+	<div class="ui-widget">
+		<h2>Servo control</h2>
+		<ul id="servo-sliders">
+		$for i in range(8):
+			<li>Servo $i: <div id="slider_$i"></div></li>
+		</ul>
+	</div>
+
+	<div class="ui-widget">
+		<div id="engine-blocked" class="ui-state-error ui-corner-all" style="margin-top: 20px; padding: 0 .7em;">
+			<p><span class="ui-icon ui-icon-alert" style="float: left; margin-right: .3em"></span>
+			Engine ignition system blocked!</p>
+		</div>
+		<div id="engine-released" class="ui-state-highlight ui-corner-all" style="display: none; margin-top: 20px; padding: 0 .7em;">
+			<p><span class="ui-icon ui-icon-info" style="float: left; margin-right: .3em"></span>
+			Engine ignition system not blocked.</p>
+		</div>
+
+		<button id="engine-stop">Emergency stop engine</button>
+		<button id="engine-release">Release engine</button>
+	</div>
 </body>
 </html>

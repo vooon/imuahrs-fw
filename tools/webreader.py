@@ -15,10 +15,11 @@ class CurrentDataThread(threading.Thread):
         self._terminate = threading.Event()
 
         self._last_update = 0
+        self._engine_blocked = False
         self._version = ''
         self._sens_test = { 'accel': False, 'gyro': False, 'mag': False, 'baro': False }
         self._trm_dat = -99
-        self._rpy_dat = 0
+        self._rpm_dat = 0
         self._bar_dat = { 'pressure': 0, 'temperature': -99 }
         self._servo_state = [ 0 ] * 8
 
@@ -67,14 +68,14 @@ class CurrentDataThread(threading.Thread):
             self._trm_dat = trm.temperature / 100.0
 
     @property
-    def rpy_dat(self):
+    def rpm_dat(self):
         with self._lock:
-            return self._rpy_dat
+            return self._rpm_dat
 
-    def _set_rpy_dat(self, rpy):
+    def _set_rpm_dat(self, rpm):
         with self._lock:
-            self._last_update_ms = rpy.time
-            self._rpy_dat = rpy.rpy
+            self._last_update_ms = rpm.time
+            self._rpm_dat = rpm.rpm
 
     @property
     def bar_dat(self):
@@ -96,9 +97,10 @@ class CurrentDataThread(threading.Thread):
                 'version': self._version,
                 'sens_test': self._sens_test,
                 'trm': self._trm_dat,
-                'rpy': self._rpy_dat,
+                'rpm': self._rpm_dat,
                 'bar': self._bar_dat,
                 'servo_state': self._servo_state,
+                'engine_blocked': self._engine_blocked,
             }
 
     def set_reader(self, reader):
@@ -117,12 +119,14 @@ class CurrentDataThread(threading.Thread):
         #mesg_en.mag_dat_en = True
         mesg_en.bar_dat_en = True
         mesg_en.trm_dat_en = True
-        #mesg_en.rpy_dat_en = True
+        mesg_en.rpm_dat_en = True
 
         self._reader.start()
         self._reader.send(version_rq)
         self._reader.send(sens_test_rq)
         self._reader.send(mesg_en)
+
+        self.stop_engine()
 
         kq = self._reader.getQueue()
 
@@ -138,8 +142,8 @@ class CurrentDataThread(threading.Thread):
                 self._set_bar_dat(pkt)
             elif isinstance(pkt, imuproto.Pt_TrmDat):
                 self._set_trm_dat(pkt)
-            elif False: # isinstance(pkt, imuproto.Pt_RpyDat):
-                self._set_rpy_dat(pkt)
+            elif isinstance(pkt, imuproto.Pt_RpmDat):
+                self._set_rpm_dat(pkt)
             else:
                 web.debug("warn: unhandled packet {}".format(pkt))
 
@@ -151,6 +155,14 @@ class CurrentDataThread(threading.Thread):
 
             self._servo_state[channel] = pulse
             self._reader.send(servo_set)
+
+    def stop_engine(self, stop=True):
+        with self._lock:
+            stop_rq = imuproto.Pt_EngineStop()
+            stop_rq.stop = stop
+
+            self._engine_blocked = stop
+            self._reader.send(stop_rq)
 
 
 current_data = CurrentDataThread()
