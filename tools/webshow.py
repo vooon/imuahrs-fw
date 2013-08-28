@@ -16,7 +16,8 @@ except:
 urls = (
     '/api/get/(rpy|bar|trm|all)', 'JsonGetCurrent',
     '/api/set/servo', 'JsonSetServo',
-    '/', 'Index'
+    '/api/set/engine-stop', 'JsonSetStop',
+    '/', 'Index',
 )
 
 render = web.template.render('tpl/', cache=False, globals=globals())
@@ -47,7 +48,6 @@ class JsonSetServo(object):
 
     def POST(self):
         i = web.input()
-        web.debug(i)
         if i.has_key('json'):
             try:
                 js = json.loads(i['json'])
@@ -79,6 +79,22 @@ class JsonSetServo(object):
             return json.dumps({'error': 'unknown input', 'post_data': repr(i)})
 
         return json.dumps({'servo': 'ok'})
+
+
+class JsonSetStop(object):
+    def GET(self):
+        return json.dumps({'error': 'use POST here secret=emergency'})
+
+    def POST(self):
+        i = web.input()
+        if i.has_key('secret') and i['secret'] == 'emergency':
+                #current_data.engine_stop()
+                pass
+        else:
+            return json.dumps({'error': 'unknown input', 'post_data': repr(i)})
+
+        return json.dumps({'engine-stop': 'ok'})
+
 
 
 def main():
