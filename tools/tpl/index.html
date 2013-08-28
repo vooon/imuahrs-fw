@@ -1,0 +1,32 @@
+$def with (info)
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Caplain Pro2 status logger</title>
+		<script src="/static/jquery-2.0.3.min.js"></script>
+		<!-- <link rel="stylesheet" href="index.css" /> -->
+	</head>
+	<body>
+		<h1>Captain Pro<sub>2</sub></h1>
+		<h2>Board information</h2>
+		<ul id="info">
+			<li>Firmware: <i>$:info['version']</i></li>
+			<li>Sensor test status:
+				<ul id="sensor_status">
+					$for k, v in info['sens_test'].iteritems():
+						<li>$k: <i>
+						$if v: OK
+						$else: FAIL
+						</i></li>
+				</ul>
+			</li>
+		</ul>
+		<h2>Sensor status</h2>
+		<ul id="status">
+			<li>Motor RPY: <span id="status-rpm">$:info['rpy']</span></li>
+			<li>Motor temperature: <span id="status-trm">$:info['trm']</span> °C</li>
+			<li>Pressure: <span id="status-bar-pressure">$:info['bar']['pressure']</span> Pa</li>
+			<li>Baro temperature: <span id="status-bar-temperature">$:info['bar']['temperature']</span> °C</li>
+		</ul>
+	</body>
+</html>
