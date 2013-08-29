@@ -206,7 +206,7 @@ class Pt_MpuDat(PacketBase):
 
         self.gyro_x, self.gyro_y, self.gyro_z, \
         self.accel_x, self.accel_y, self.accel_z, \
-        self.temperature = struct.unpack('<hhhhhhh', buf)
+        self.temperature = struct.unpack('<hhhhhhh', buffer(buf))
 
     def __repr__(self):
         return "<Pt_MpuDat: ({} ms) gyro=[{}, {}, {}] accel=[{}, {}, {}] temp={}>".format(
@@ -226,7 +226,7 @@ class Pt_MagDat(PacketBase):
         if len(buf) != 6:
             raise DesError
 
-        self.mag_x, self.mag_y, self.mag_z = struct.unpack('<hhh', buf)
+        self.mag_x, self.mag_y, self.mag_z = struct.unpack('<hhh', buffer(buf))
 
     def __repr__(self):
         return "<Pt_MagDat: ({} ms) mag=[{}, {}, {}]>".format(
@@ -243,7 +243,7 @@ class Pt_BarDat(PacketBase):
         if len(buf) != 6:
             raise DesError
 
-        self.pressure, self.temperature = struct.unpack('<ih', buf)
+        self.pressure, self.temperature = struct.unpack('<ih', buffer(buf))
 
     def __repr__(self):
         return "<Pt_BarDat: ({} ms) pressure={} temperature={}>".format(
@@ -259,7 +259,7 @@ class Pt_TrmDat(PacketBase):
         if len(buf) != 2:
             raise DesError
 
-        self.temperature, = struct.unpack('<h', buf)
+        self.temperature, = struct.unpack('<h', buffer(buf))
 
     def __repr__(self):
         return "<Pt_TrmDat: ({} ms) temperature={}>".format(
@@ -275,7 +275,7 @@ class Pt_RpmDat(PacketBase):
         if len(buf) != 2:
             raise DesError
 
-        self.rpm, = struct.unpack('<h', buf)
+        self.rpm, = struct.unpack('<h', buffer(buf))
 
     def __repr__(self):
         return "<Pt_RpmDat: ({} ms) rpm={}>".format(
