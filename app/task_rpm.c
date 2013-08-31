@@ -54,7 +54,7 @@ static msg_t thd_rpm(void *arg UNUSED)
 			continue;
 		}
 
-		rpm = 10e6f / period * 60.0f;
+		rpm = 1e6f / period * 60.0f;
 		pt_send_rpm_dat(rpm);
 	}
 
