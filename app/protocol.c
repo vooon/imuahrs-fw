@@ -368,7 +368,7 @@ void pt_send_trm_dat(int16_t temperature)
 	}
 }
 
-void pt_send_rpm_dat(int16_t rpm)
+void pt_send_rpm_dat(uint16_t rpm)
 {
 	msg_t ret;
 	struct pt_rpm_dat data = { .rpm = rpm };

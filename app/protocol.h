@@ -75,7 +75,7 @@ struct pt_trm_dat {
 } PACK_STRUCT_STRUCT;
 
 struct pt_rpm_dat {
-	int16_t rpm;
+	uint16_t rpm;
 } PACK_STRUCT_STRUCT;
 
 extern void pt_init(void); /* start main receiver thread */
@@ -86,6 +86,6 @@ extern void pt_send_mpu_dat(int16_t gx, int16_t gy, int16_t gz, int16_t ax, int1
 extern void pt_send_mag_dat(int16_t mag_x, int16_t mag_y, int16_t mag_z);
 extern void pt_send_bar_dat(int32_t pressure, int16_t temperature);
 extern void pt_send_trm_dat(int16_t temperature);
-extern void pt_send_rpm_dat(int16_t rpm);
+extern void pt_send_rpm_dat(uint16_t rpm);
 
 #endif /* PROTOCOL_H */

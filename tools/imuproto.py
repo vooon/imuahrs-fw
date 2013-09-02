@@ -275,7 +275,7 @@ class Pt_RpmDat(PacketBase):
         if len(buf) != 2:
             raise DesError
 
-        self.rpm, = struct.unpack('<h', buffer(buf))
+        self.rpm, = struct.unpack('<H', buffer(buf))
 
     def __repr__(self):
         return "<Pt_RpmDat: ({} ms) rpm={}>".format(

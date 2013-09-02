@@ -22,7 +22,6 @@ void rpm_init(void)
 
 static msg_t thd_rpm(void *arg UNUSED)
 {
-	msg_t ret;
 	TimeMeasurement rpm_tm;
 	//uint16_t rpm;
 	float rpm;
