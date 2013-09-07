@@ -14,7 +14,7 @@ class RRDEngineLog(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self, name='imu data storage')
         self.daemon = True
-        self.fname = time.strftime('./static/log/engine_log_%Y-%m-%d-%H:%M.rrd')
+        self.fname = time.strftime('./static/log/engine_log_%Y-%m-%d-%H:%M:%S.rrd')
         self.create()
         self.terminate = threading.Event()
 
