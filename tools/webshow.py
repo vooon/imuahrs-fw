@@ -9,10 +9,11 @@ import web.template
 from webreader import current_data
 from rrdlog import RRDEngineLog
 
-try:
-    import cjson as json
-except:
-    import json
+#try:
+#    import cjson as json
+#except:
+#    import json
+import json
 
 urls = (
     '/api/get/(rpm|bar|trm|all)', 'JsonGetCurrent',
