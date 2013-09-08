@@ -25,7 +25,7 @@
 
 #include "alert.h"
 
-#define FW_VERSION "0.2.1"
+#define FW_VERSION "0.2.2"
 
 enum pt_msgid {
 	ID_VERSION = 0x00,
