@@ -14,7 +14,10 @@
 #define NTC10K_GPIO GPIOC
 #define NTC10K_PIN  5
 
-#define RPM_GPIO GPIOC
-#define RPM_PIN  4
+#define RPM_SIG_GPIO GPIOC
+#define RPM_KILL_GPIO GPIOC
+#define RPM_SIG_PIN  4
+//#define RPM_KILL_PIN  4
+#define RPM_KILL_PIN  3
 
 #endif /* _APP_CONFIG_H_ */

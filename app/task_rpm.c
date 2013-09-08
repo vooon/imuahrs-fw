@@ -5,7 +5,7 @@
 
 #ifdef HAS_DEV_RPM
 
-#define EVT_TIMEOUT	MS2ST(500)
+#define EVT_TIMEOUT	MS2ST(1000)
 #define IRQ_EVTMASK	EVENT_MASK(3)
 
 /* Thread */
@@ -63,12 +63,13 @@ static msg_t thd_rpm(void *arg UNUSED)
 void rpm_stop_engine(bool en)
 {
 	if (en) {
-		palSetPadMode(RPM_GPIO, RPM_PIN, PAL_MODE_OUTPUT_OPENDRAIN);
-		palClearPad(RPM_GPIO, RPM_PIN);
+		// accept KILL pin == SIG pin
+		palSetPadMode(RPM_KILL_GPIO, RPM_KILL_PIN, PAL_MODE_OUTPUT_OPENDRAIN);
+		palClearPad(RPM_KILL_GPIO, RPM_KILL_PIN);
 	}
 	else {
-		palSetPadMode(RPM_GPIO, RPM_PIN, PAL_MODE_INPUT_PULLUP);
-		//palClearPad(RDM_GPIO, RPM_PIN);
+		palSetPadMode(RPM_KILL_GPIO, RPM_KILL_PIN, PAL_MODE_INPUT_PULLUP);
+		//palClearPad(RDM_KILL_GPIO, RPM_KILL_PIN);
 	}
 }
 
