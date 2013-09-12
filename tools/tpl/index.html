@@ -1,4 +1,4 @@
-$def with (info)
+$def with (info, timestamp)
 <!DOCTYPE html>
 <html>
 <head>
@@ -6,7 +6,15 @@ $def with (info)
 	<link href="/static/css/ui-lightness/jquery-ui-1.10.3.custom.css" rel="stylesheet">
 	<script src="/static/js/jquery-1.9.1.js"></script>
 	<script src="/static/js/jquery-ui-1.10.3.custom.js"></script>
+	<script src="/static/js/jquery.flot.js"></script>
+	<script src="/static/js/jquery.flot.time.js"></script>
+	<script src="/static/js/jquery.flot.crosshair.js"></script>
 	<script>
+		var plot_trm = [ [ $:timestamp * 1000, $:info['trm'] ] ];
+		var plot_rpm = [ [ $:timestamp * 1000, $:info['rpm'] ] ];
+		var plot_max = 300;
+		var plot = NaN;
+
 		function set_servo_req(channel, event, ui) {
 			console.log(channel, event, ui)
 			$$.post('/api/set/servo', {
@@ -22,6 +30,24 @@ $def with (info)
 			$$('#status-trm').text(all['trm'])
 			$$('#status-bar-pressure').text(all['bar']['pressure'])
 			$$('#status-bar-temperature').text(all['bar']['temperature'])
+
+			if (plot) {
+				if (plot_rpm.length > plot_max)
+					plot_rpm = plot_rpm.slice(1)
+
+				if (plot_trm.length > plot_max)
+					plot_trm = plot_trm.slice(1)
+
+				plot_rpm.push([ all['timestamp'] * 1000, all['rpm'] ])
+				plot_trm.push([ all['timestamp'] * 1000, all['trm'] ])
+
+				series = plot.getData()
+				series[0].data = plot_rpm
+				series[1].data = plot_trm
+				plot.setData(series)
+				plot.setupGrid()
+				plot.draw()
+			}
 
 			if (all['engine_blocked']) {
 				$$('#engine-blocked').css({ display: 'block'})
@@ -73,6 +99,28 @@ $def with (info)
 				})
 			})
 
+			plot = $$.plot("#plot", [
+				{ label: "RPM", yaxis: 1, data: plot_trm },
+				{ label: "Temperature [°C]", yaxis: 2, data: plot_rpm },
+			], {
+				series: {
+					shadowSize: 0,
+					lines: {
+						show: true
+					}
+				},
+				grid: {
+					hoverable: true,
+					clickable: false
+				},
+				crosshair: { mode: "y" },
+				xaxes: [ { mode: "time", timezone: "browser", timeformat: "%H:%M:%S" } ],
+				yaxes: [ { min: 0, max: 9000 }, {
+					alignTicksWithAxis: 1,
+					position: "right"
+				} ]
+			})
+
 			poll_getall()
 		});
 	</script>
@@ -104,6 +152,7 @@ $def with (info)
 			<li>Pressure: <strong id="status-bar-pressure">$:info['bar']['pressure']</strong> kPa</li>
 			<li>Baro temperature: <strong id="status-bar-temperature">$:info['bar']['temperature']</strong> °C</li>
 		</ul>
+		<div id="plot" style="width: 100%; height: 300px; border: 1px #000"></div>
 	</div>
 
 	<div class="ui-widget">

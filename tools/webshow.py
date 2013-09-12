@@ -6,6 +6,7 @@ import imuproto
 import argparse
 import web
 import web.template
+import time
 from webreader import current_data
 from rrdlog import RRDEngineLog
 
@@ -28,19 +29,21 @@ render = web.template.render('tpl/', cache=False, globals=globals())
 
 class Index(object):
     def GET(self):
-        return render.index(current_data.get_all())
+        return render.index(current_data.get_all(), time.time())
 
 
 class JsonGetCurrent(object):
     def GET(self, element):
         if element == 'rpm':
-            return json.dumps({'rpm': current_data.rpm_dat})
+            return json.dumps({'timestamp': time.time(), 'rpm': current_data.rpm_dat})
         elif element == 'bar':
-            return json.dumps({'bar': current_data.bar_dat})
+            return json.dumps({'timestamp': time.time(), 'bar': current_data.bar_dat})
         elif element == 'trm':
-            return json.dumps({'trm': current_data.trm_dat})
+            return json.dumps({'timestamp': time.time(), 'trm': current_data.trm_dat})
         elif element == 'all':
-            return json.dumps(current_data.get_all())
+            all_ = current_data.get_all()
+            all_.update(timestamp=time.time())
+            return json.dumps(all_)
         else:
             return json.dumps({'error': 'unknown request'})
 
