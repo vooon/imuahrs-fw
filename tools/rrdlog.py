@@ -2,9 +2,11 @@
 # vim:set ts=4 sw=4 et:
 
 from pyrrd.rrd import *
+from pyrrd.exceptions import *
 from webreader import current_data
 import threading
 import time
+import web
 
 
 ENGINE_SERVO = 0
@@ -32,13 +34,17 @@ class RRDEngineLog(threading.Thread):
         self.rrdfile.create()
 
     def run(self):
+        time.sleep(1)
         while not self.terminate.is_set():
             rpm = current_data.rpm_dat
             trm = current_data.trm_dat
             servo = current_data._servo_state[ENGINE_SERVO]
 
-            self.rrdfile.bufferValue(int(time.time()), rpm, trm, servo)
-            self.rrdfile.update()
+            try:
+                self.rrdfile.bufferValue(int(time.time()), rpm, trm, servo)
+                self.rrdfile.update()
+            except ExternalCommandError as err:
+                web.debug(err)
 
             self.terminate.wait(1.0)
 
