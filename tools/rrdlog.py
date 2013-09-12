@@ -19,8 +19,8 @@ class RRDEngineLog(threading.Thread):
         self.terminate = threading.Event()
 
     def create(self):
-        e_rpm_ds = DataSource(dsName='engine_rpm', dsType='GAUGE', heartbeat=1)
-        e_trm_ds = DataSource(dsName='engine_temp', dsType='GAUGE', heartbeat=1)
+        e_rpm_ds = DataSource(dsName='engine_rpm', dsType='ABSOLUTE', heartbeat=1)
+        e_trm_ds = DataSource(dsName='engine_temp', dsType='ABSOLUTE', heartbeat=1)
         e_servo_ds = DataSource(dsName='engine_servo', dsType='ABSOLUTE', heartbeat=1)
 
         avg1 = RRA(cf='AVERAGE', xff=0.5, steps=1, rows=3600*2)
@@ -37,7 +37,7 @@ class RRDEngineLog(threading.Thread):
             trm = current_data.trm_dat
             servo = current_data._servo_state[ENGINE_SERVO]
 
-            self.rrdfile.bufferValue(time.time(), rpm, trm, servo)
+            self.rrdfile.bufferValue(int(time.time()), rpm, trm, servo)
             self.rrdfile.update()
 
             self.terminate.wait(1.0)
